@@ -7,8 +7,8 @@ function RowBandingCompensationDialog( parameters )
    this.windowTitle = TITLE;
 
    var dialog = this;
-   var labelWidth = this.font.width( "Maximum per-iteration correction:" ) + this.font.width( "MMMM" );
-   var editWidth = this.font.width( "0.000000" ) + this.font.width( "MM" );
+   var labelWidth = this.logicalPixelsToPhysical( 260 );
+   var editWidth = this.logicalPixelsToPhysical( 90 );
 
    this.helpLabel = new Label( this );
    this.helpLabel.useRichText = true;
