@@ -331,7 +331,7 @@ function RowBandingCompensationDialog( parameters )
       function( value ) { dialog.parameters.clippingPolicy = value; } );
 
    this.iterationSection = this.createSection( "Iteration Control" );
-   this.iterationsControl = this.addNumericControl( this.iterationSection.control.sizer, "Number of iterations:", "iterations", 1, 10, 0, 10,
+   this.iterationsControl = this.addNumericControl( this.iterationSection.control.sizer, "Number of iterations:", "iterations", 1, 300, 0, 300,
       function() { return dialog.parameters.iterations; },
       function( value ) { dialog.parameters.iterations = Math.round( value ); } );
    this.enableConvergenceCheck = this.addCheckBoxRow( this.iterationSection.control.sizer, "Enable convergence stop:", "enableConvergence",

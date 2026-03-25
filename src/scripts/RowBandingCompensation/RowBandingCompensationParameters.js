@@ -173,7 +173,7 @@ var RBC_TOOLTIPS = {
 
    iterations:
       "<p>Maximum number of conservative correction passes.</p>" +
-      "<p>Two to four iterations are usually sufficient. More iterations increase runtime and can slowly accumulate bias if the model is too aggressive.</p>",
+      "<p>Use higher values when the process is configured to converge gradually. More iterations increase runtime and can slowly accumulate bias if the model is too aggressive.</p>",
 
    convergenceEpsilon:
       "<p>Early-stop threshold based on RMS change in the row residual profile between iterations.</p>" +
@@ -286,7 +286,7 @@ function RowBandingCompensationParameters()
       this.maximumPerIterationCorrection = 0.02;
       this.clippingPolicy = "ClampLow";
 
-      this.iterations = 3;
+      this.iterations = 30;
       this.convergenceEpsilon = 0.00005;
       this.recomputeMasksEachIteration = false;
       this.recomputeStarInfluenceEachIteration = false;
@@ -350,7 +350,7 @@ function RowBandingCompensationParameters()
       if ( RBC_CLIPPING_POLICIES.indexOf( this.clippingPolicy ) < 0 )
          this.clippingPolicy = "ClampLow";
 
-      this.iterations = Math.max( 1, Math.round( this.iterations ) );
+      this.iterations = rbcClamp( Math.round( this.iterations ), 1, 300 );
       this.convergenceEpsilon = rbcClamp( this.convergenceEpsilon, RBC_CONVERGENCE_EPSILON_MIN, RBC_CONVERGENCE_EPSILON_MAX );
    };
 
