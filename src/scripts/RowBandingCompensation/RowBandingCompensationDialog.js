@@ -527,6 +527,8 @@ function RowBandingCompensationDialog( parameters )
 
    this.syncControlsFromParameters();
    this.updateControlStates();
-   this.adjustToContents();
-   this.setMinWidth( 760 );
+   if ( typeof this.adjustToContents == "function" )
+      this.adjustToContents();
+   if ( typeof this.setMinWidth == "function" )
+      this.setMinWidth( 760 );
 }
