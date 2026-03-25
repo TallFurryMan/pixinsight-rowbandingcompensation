@@ -176,7 +176,7 @@ var RBC_TOOLTIPS = {
       "<p>Use higher values when the process is configured to converge gradually. More iterations increase runtime and can slowly accumulate bias if the model is too aggressive.</p>",
 
    convergenceEpsilon:
-      "<p>Early-stop threshold based on RMS change in the row residual profile between iterations.</p>" +
+      "<p>Early-stop threshold for iterative convergence. The process requires both a small inter-iteration residual change and a small remaining row-residual amplitude before stopping early.</p>" +
       "<p>The value is edited as a mantissa and base-10 exponent, over a bounded range from 1e-7 to 1e-3. Smaller values force more iterations. Larger values stop earlier but may leave some correctable residual behind.</p>",
 
    recomputeMasksEachIteration:

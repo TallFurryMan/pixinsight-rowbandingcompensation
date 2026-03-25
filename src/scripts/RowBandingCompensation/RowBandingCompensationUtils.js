@@ -208,6 +208,24 @@ function rbcRmsDifference( a, b )
    return Math.sqrt( sum / a.length );
 }
 
+function rbcRobustSigma( values )
+{
+   if ( values.length == 0 )
+      return 0;
+   return 1.4826 * rbcMad( values );
+}
+
+function rbcAbsQuantile( values, q )
+{
+   if ( values.length == 0 )
+      return 0;
+   var absoluteValues = new Array( values.length );
+   for ( var i = 0; i < values.length; ++i )
+      absoluteValues[ i ] = Math.abs( values[ i ] );
+   absoluteValues.sort( rbcNumericSort );
+   return rbcQuantileSorted( absoluteValues, q );
+}
+
 function rbcGenerateUniqueId( baseId )
 {
    var sanitized = baseId.replace( /[^A-Za-z0-9_]/g, "_" );

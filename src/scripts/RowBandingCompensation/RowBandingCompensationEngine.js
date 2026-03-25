@@ -115,8 +115,14 @@ function RowBandingCompensationEngine( parameters )
             }.bind( this ) );
 
          console.writeln( "Rows with limited support: " + finalProfileData.insufficientRows );
-         console.writeln( format( "Residual RMS: %.8f", this.profileRms( finalProfileData.rowResidual ) ) );
-         console.writeln( format( "Max correction amplitude: %.8f", rbcMaxAbs( finalProfileData.rowCorrection ) ) );
+         var residualRms = this.profileRms( finalProfileData.rowResidual );
+         var residualRobustSigma = rbcRobustSigma( finalProfileData.rowResidual );
+         var residualAbsP95 = rbcAbsQuantile( finalProfileData.rowResidual, 0.95 );
+         var maxCorrection = rbcMaxAbs( finalProfileData.rowCorrection );
+         console.writeln( format( "Residual RMS: %.8f", residualRms ) );
+         console.writeln( format( "Residual robust sigma: %.8f", residualRobustSigma ) );
+         console.writeln( format( "Residual |95%%| amplitude: %.8f", residualAbsP95 ) );
+         console.writeln( format( "Max correction amplitude: %.8f", maxCorrection ) );
 
          if ( this.parameters.enableRowTrendCorrection )
             this.runTimedStep(
@@ -135,9 +141,12 @@ function RowBandingCompensationEngine( parameters )
             var rmsChange = rbcRmsDifference( previousResidual, finalProfileData.rowResidual );
             console.writeln( format( "Residual RMS change: %.8f", rmsChange ) );
             if ( this.parameters.enableConvergence )
-               converged = rmsChange <= this.parameters.convergenceEpsilon;
+               converged = rmsChange <= this.parameters.convergenceEpsilon &&
+                  residualAbsP95 <= this.parameters.convergenceEpsilon;
          }
-         if ( this.parameters.enableConvergence && rbcMaxAbs( finalProfileData.rowCorrection ) <= this.parameters.convergenceEpsilon )
+         if ( this.parameters.enableConvergence &&
+              maxCorrection <= this.parameters.convergenceEpsilon &&
+              residualAbsP95 <= this.parameters.convergenceEpsilon )
             converged = true;
 
          previousResidual = finalProfileData.rowResidual.slice( 0 );
