@@ -42,6 +42,8 @@ function RowBandingCompensationEngine( parameters )
 
       var iterations = this.parameters.enableIterations ? this.parameters.iterations : 1;
       var previousResidual = null;
+      var previousResidualRms = null;
+      var consecutiveResidualRmsIncreaseCount = 0;
       var finalMaskSet = null;
       var finalProfileData = null;
       var finalInfluence = this.profileEstimator.zeroProfile( currentImage.height );
@@ -124,6 +126,36 @@ function RowBandingCompensationEngine( parameters )
          console.writeln( format( "Residual |95%%| amplitude: %.8f", residualAbsP95 ) );
          console.writeln( format( "Max correction amplitude: %.8f", maxCorrection ) );
 
+         var stopForDivergence = false;
+         if ( previousResidualRms != null )
+         {
+            if ( residualRms > previousResidualRms )
+            {
+               ++consecutiveResidualRmsIncreaseCount;
+               console.warningln( format(
+                  "<end><cbr>Residual RMS increased: %.8f -> %.8f (%d/3 consecutive increases).",
+                  previousResidualRms,
+                  residualRms,
+                  consecutiveResidualRmsIncreaseCount ) );
+               if ( consecutiveResidualRmsIncreaseCount >= 3 )
+               {
+                  console.warningln(
+                     "<end><cbr>Residual RMS has increased for 3 consecutive iterations. " +
+                     "Stopping early to avoid divergence. Reduce global correction strength and/or maximum per-iteration correction." );
+                  stopForDivergence = true;
+               }
+            }
+            else
+               consecutiveResidualRmsIncreaseCount = 0;
+         }
+
+         if ( stopForDivergence )
+         {
+            finalProfileData.rowCorrection = this.profileEstimator.zeroProfile( finalProfileData.rowCorrection.length );
+            rbcLogProgress( "Iteration time: " + rbcFormatDuration( rbcNowMilliseconds() - iterationStart ) );
+            break;
+         }
+
          if ( this.parameters.enableRowTrendCorrection )
             this.runTimedStep(
                "Applying row correction",
@@ -150,6 +182,7 @@ function RowBandingCompensationEngine( parameters )
             converged = true;
 
          previousResidual = finalProfileData.rowResidual.slice( 0 );
+         previousResidualRms = residualRms;
          rbcLogProgress( "Iteration time: " + rbcFormatDuration( rbcNowMilliseconds() - iterationStart ) );
          if ( converged )
          {
