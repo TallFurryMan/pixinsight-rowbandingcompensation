@@ -7,8 +7,12 @@ function RowBandingCompensationDialog( parameters )
    this.windowTitle = TITLE;
 
    var dialog = this;
-   var labelWidth = 260;
-   var editWidth = 90;
+   var emWidth = rbcFontWidth( this, "M", 8 );
+   var labelWidth = Math.max(
+      rbcFontWidth( this, "Soft background smoothing strength:", 260 ),
+      rbcFontWidth( this, "Additive correction clipping policy:", 260 ),
+      rbcFontWidth( this, "Confidence weighting strength:", 260 ) ) + emWidth;
+   var editWidth = 8 * emWidth;
 
    this.helpLabel = new Label( this );
    this.helpLabel.useRichText = true;
@@ -75,7 +79,7 @@ function RowBandingCompensationDialog( parameters )
       control.label.toolTip = control.toolTip;
       control.setRange( minValue, maxValue );
       control.slider.setRange( 0, sliderMax );
-      control.slider.minWidth = 220;
+      control.slider.minWidth = rbcLogicalPixelsToPhysical( dialog, 220 );
       control.setPrecision( precision );
       control.edit.setFixedWidth( editWidth );
       control.setValue( valueGetter() );
@@ -131,8 +135,8 @@ function RowBandingCompensationDialog( parameters )
       if ( !required )
       {
          var clearButton = new ToolButton( dialog );
-         clearButton.icon = new Bitmap( ":/icons/clear.png" );
-         clearButton.setFixedSize( 20, 20 );
+         clearButton.icon = rbcScaledResource( dialog, ":/icons/clear.png" );
+         rbcSetScaledFixedSize( clearButton, 20, 20 );
          clearButton.toolTip = "<p>Clear this optional view selection.</p>";
          clearButton.onClick = function()
          {
@@ -333,8 +337,8 @@ function RowBandingCompensationDialog( parameters )
       function( value ) { dialog.parameters.outputRowCorrectionPlot = value; } );
 
    this.newInstanceButton = new ToolButton( this );
-   this.newInstanceButton.icon = new Bitmap( ":/process-interface/new-instance.png" );
-   this.newInstanceButton.setFixedSize( 24, 24 );
+   this.newInstanceButton.icon = rbcScaledResource( this, ":/process-interface/new-instance.png" );
+   rbcSetScaledFixedSize( this.newInstanceButton, 24, 24 );
    this.newInstanceButton.toolTip = "<p>Create a process instance with the current parameters.</p>";
    this.newInstanceButton.onMousePress = function()
    {
@@ -529,8 +533,7 @@ function RowBandingCompensationDialog( parameters )
    this.updateControlStates();
    if ( typeof this.adjustToContents == "function" )
       this.adjustToContents();
-   if ( typeof this.setMinWidth == "function" )
-      this.setMinWidth( 760 );
+   rbcSetScaledMinWidth( this, 760 );
 }
 
 RowBandingCompensationDialog.prototype = new Dialog;

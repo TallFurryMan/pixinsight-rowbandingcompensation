@@ -236,6 +236,46 @@ function rbcWindowFromImage( image, baseId )
    return window;
 }
 
+function rbcLogicalPixelsToPhysical( control, value )
+{
+   if ( control != null && typeof control.logicalPixelsToPhysical == "function" )
+      return control.logicalPixelsToPhysical( value );
+   return Math.round( value );
+}
+
+function rbcScaledResource( control, resource )
+{
+   if ( control != null && typeof control.scaledResource == "function" )
+      return control.scaledResource( resource );
+   return new Bitmap( resource );
+}
+
+function rbcSetScaledFixedSize( control, width, height )
+{
+   if ( control == null )
+      return;
+   if ( typeof control.setScaledFixedSize == "function" )
+      control.setScaledFixedSize( width, height );
+   else if ( typeof control.setFixedSize == "function" )
+      control.setFixedSize(
+         rbcLogicalPixelsToPhysical( control, width ),
+         rbcLogicalPixelsToPhysical( control, height ) );
+}
+
+function rbcSetScaledMinWidth( control, width )
+{
+   if ( control == null || typeof control.setMinWidth != "function" )
+      return;
+   control.setMinWidth( rbcLogicalPixelsToPhysical( control, width ) );
+}
+
+function rbcFontWidth( control, text, fallbackWidth )
+{
+   if ( control != null && control.font != null && typeof control.font.width == "function" )
+      return control.font.width( text );
+   return fallbackWidth;
+}
+
 function rbcGrayImageFromView( view )
 {
    var gray = Image.newFloatImage();
