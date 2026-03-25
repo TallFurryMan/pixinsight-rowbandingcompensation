@@ -37,8 +37,15 @@ function RowBandingCompensationEngine( parameters )
       if ( (this.parameters.enableStarInfluence || this.parameters.enableProtectionMask) && starMaskView == null && starsOnlyView == null )
          console.warningln( "<end><cbr>No external star support image was provided. In v1, star-dependent features are disabled, so rowInfluence will be flat zero and no protection mask will be applied." );
 
-      if ( this.parameters.enableIterations && !this.parameters.enableConvergence )
-         console.writeln( "Convergence stop: disabled; the full iteration count will be used." );
+      var convergenceFloorSelected = this.parameters.enableConvergence &&
+         this.parameters.convergenceEpsilon <= RBC_CONVERGENCE_EPSILON_MIN;
+      if ( this.parameters.enableIterations )
+      {
+         if ( !this.parameters.enableConvergence )
+            console.writeln( "Convergence stop: disabled; the full iteration count will be used." );
+         else if ( convergenceFloorSelected )
+            console.writeln( "Convergence stop: epsilon is at the 32-bit floor; early stop is suppressed and the full iteration count will be used." );
+      }
 
       var iterations = this.parameters.enableIterations ? Math.max( 1, this.parameters.iterations ) : 1;
       var previousResidual = null;
@@ -121,10 +128,10 @@ function RowBandingCompensationEngine( parameters )
          var residualRobustSigma = rbcRobustSigma( finalProfileData.rowResidual );
          var residualAbsP95 = rbcAbsQuantile( finalProfileData.rowResidual, 0.95 );
          var maxCorrection = rbcMaxAbs( finalProfileData.rowCorrection );
-         console.writeln( format( "Residual RMS: %.8f", residualRms ) );
-         console.writeln( format( "Residual robust sigma: %.8f", residualRobustSigma ) );
-         console.writeln( format( "Residual |95%%| amplitude: %.8f", residualAbsP95 ) );
-         console.writeln( format( "Max correction amplitude: %.8f", maxCorrection ) );
+         console.writeln( "Residual RMS: " + rbcFormatMetric( residualRms ) );
+         console.writeln( "Residual robust sigma: " + rbcFormatMetric( residualRobustSigma ) );
+         console.writeln( "Residual |95%| amplitude: " + rbcFormatMetric( residualAbsP95 ) );
+         console.writeln( "Max correction amplitude: " + rbcFormatMetric( maxCorrection ) );
 
          var stopForDivergence = false;
          if ( previousResidualRms != null )
@@ -132,11 +139,12 @@ function RowBandingCompensationEngine( parameters )
             if ( residualRms > previousResidualRms )
             {
                ++consecutiveResidualRmsIncreaseCount;
-               console.warningln( format(
-                  "<end><cbr>Residual RMS increased: %.8f -> %.8f (%d/3 consecutive increases).",
-                  previousResidualRms,
-                  residualRms,
-                  consecutiveResidualRmsIncreaseCount ) );
+               console.warningln(
+                  "<end><cbr>Residual RMS increased: " +
+                  rbcFormatMetric( previousResidualRms ) +
+                  " -> " +
+                  rbcFormatMetric( residualRms ) +
+                  format( " (%d/3 consecutive increases).", consecutiveResidualRmsIncreaseCount ) );
                if ( consecutiveResidualRmsIncreaseCount >= 3 )
                {
                   console.warningln(
@@ -171,12 +179,13 @@ function RowBandingCompensationEngine( parameters )
          if ( previousResidual != null )
          {
             var rmsChange = rbcRmsDifference( previousResidual, finalProfileData.rowResidual );
-            console.writeln( format( "Residual RMS change: %.8f", rmsChange ) );
-            if ( this.parameters.enableConvergence )
+            console.writeln( "Residual RMS change: " + rbcFormatMetric( rmsChange ) );
+            if ( this.parameters.enableConvergence && !convergenceFloorSelected )
                converged = rmsChange <= this.parameters.convergenceEpsilon &&
                   residualAbsP95 <= this.parameters.convergenceEpsilon;
          }
          if ( this.parameters.enableConvergence &&
+              !convergenceFloorSelected &&
               maxCorrection <= this.parameters.convergenceEpsilon &&
               residualAbsP95 <= this.parameters.convergenceEpsilon )
             converged = true;
@@ -265,7 +274,7 @@ function RowBandingCompensationEngine( parameters )
       console.writeln( "Iterations enabled: " + this.parameters.enableIterations );
       console.writeln( "Convergence stop enabled: " + this.parameters.enableConvergence );
       if ( this.parameters.enableConvergence )
-         console.writeln( format( "Convergence epsilon: %.8f", this.parameters.convergenceEpsilon ) );
+         console.writeln( "Convergence epsilon: " + rbcFormatMetric( this.parameters.convergenceEpsilon ) );
       console.writeln( "Diagnostics enabled: " + this.parameters.enableDiagnostics );
    };
 

@@ -2,9 +2,9 @@ var RBC_ROW_ESTIMATORS = [ "Median", "TrimmedMean", "WinsorizedMean" ];
 var RBC_VISIBILITY_MODES = [ "HighPassResidual", "FirstDerivative", "SecondDerivative", "LocalMAD" ];
 var RBC_KERNEL_TYPES = [ "Gaussian", "Triangular", "Box" ];
 var RBC_CLIPPING_POLICIES = [ "ClampLow", "Clamp01", "None" ];
-var RBC_CONVERGENCE_EPSILON_MIN = 1.0e-7;
+var RBC_CONVERGENCE_EPSILON_MIN = 1.0e-9;
 var RBC_CONVERGENCE_EPSILON_MAX = 1.0e-3;
-var RBC_CONVERGENCE_EXPONENTS = [ -3, -4, -5, -6, -7 ];
+var RBC_CONVERGENCE_EXPONENTS = [ -3, -4, -5, -6, -7, -8, -9 ];
 
 var RBC_TOOLTIPS = {
    targetViewId:
@@ -179,7 +179,8 @@ var RBC_TOOLTIPS = {
 
    convergenceEpsilon:
       "<p>Early-stop threshold for iterative convergence. The process requires both a small inter-iteration residual change and a small remaining row-residual amplitude before stopping early.</p>" +
-      "<p>The value is edited as a mantissa and base-10 exponent, over a bounded range from 1e-7 to 1e-3. Smaller values force more iterations. Larger values stop earlier but may leave some correctable residual behind.</p>",
+      "<p>The value is edited as a mantissa and base-10 exponent, over a bounded range from 1e-9 to 1e-3. Smaller values force more iterations. Larger values stop earlier but may leave some correctable residual behind.</p>" +
+      "<p>On the current 32-bit working-image path, selecting the minimum floor intentionally suppresses early convergence and lets the maximum iteration count govern termination.</p>",
 
    recomputeMasksEachIteration:
       "<p>Rebuilds internal masks after each pass using the current corrected image state.</p>" +

@@ -246,7 +246,7 @@ function RowBandingCompensationDialog( parameters )
          dialog.syncConvergenceControlsFromParameters();
       } );
    this.convergenceExponentCombo = this.addComboBoxRow( this.iterationSection.control.sizer, "Convergence exponent:", "convergenceEpsilon",
-      [ "10^-3", "10^-4", "10^-5", "10^-6", "10^-7" ],
+      [ "10^-3", "10^-4", "10^-5", "10^-6", "10^-7", "10^-8", "10^-9" ],
       function()
       {
          return format( "10^%d", dialog.decomposeConvergenceEpsilon( dialog.parameters.convergenceEpsilon ).exponent );

@@ -438,6 +438,11 @@ function rbcFormatDuration( milliseconds )
    return format( "%d min %.1f s", minutes, seconds );
 }
 
+function rbcFormatMetric( value )
+{
+   return value != 0 && Math.abs( value ) < 1.0e-6 ? format( "%g", value ) : format( "%.8f", value );
+}
+
 function rbcLogProgress( message )
 {
    console.writeln( message );
