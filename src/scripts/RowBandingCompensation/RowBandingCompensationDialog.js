@@ -131,8 +131,8 @@ function RowBandingCompensationDialog( parameters )
       if ( !required )
       {
          var clearButton = new ToolButton( dialog );
-         clearButton.icon = dialog.scaledResource( ":/icons/clear.png" );
-         clearButton.setScaledFixedSize( 20, 20 );
+         clearButton.icon = new Bitmap( ":/icons/clear.png" );
+         clearButton.setFixedSize( 20, 20 );
          clearButton.toolTip = "<p>Clear this optional view selection.</p>";
          clearButton.onClick = function()
          {
@@ -333,8 +333,8 @@ function RowBandingCompensationDialog( parameters )
       function( value ) { dialog.parameters.outputRowCorrectionPlot = value; } );
 
    this.newInstanceButton = new ToolButton( this );
-   this.newInstanceButton.icon = this.scaledResource( ":/process-interface/new-instance.png" );
-   this.newInstanceButton.setScaledFixedSize( 24, 24 );
+   this.newInstanceButton.icon = new Bitmap( ":/process-interface/new-instance.png" );
+   this.newInstanceButton.setFixedSize( 24, 24 );
    this.newInstanceButton.toolTip = "<p>Create a process instance with the current parameters.</p>";
    this.newInstanceButton.onMousePress = function()
    {
