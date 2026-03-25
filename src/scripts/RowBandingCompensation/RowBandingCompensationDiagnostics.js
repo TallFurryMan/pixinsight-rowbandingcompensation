@@ -34,7 +34,7 @@ function RowBandingCompensationDiagnosticsExporter( parameters )
 
    this.publishProfilePlot = function( targetId, suffix, values )
    {
-      var width = 256;
+      var width = 256 * 3;
       var height = Math.max( 64, values.length );
       var window = new ImageWindow( width, height, 1, 32, true, false, rbcGenerateUniqueId( targetId + "_" + suffix ) );
       var image = window.mainView.image;
