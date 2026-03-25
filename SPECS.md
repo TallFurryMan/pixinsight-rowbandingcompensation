@@ -4,6 +4,8 @@
 
 Implement a PixInsight JavaScript Runtime (PJSR) process module named RowBandingCompensation designed to reduce horizontal row-wise banding in linear, calibrated, monochrome astrophotography subframes, before registration and integration.
 
+This v1 specification remains limited to defects that are still visually horizontal in image coordinates. Slight post-stacking row tilt is intentionally deferred.
+
 The target defect is a row-level background depression or offset that appears to be correlated with bright stars and/or row readout behavior. The correction must be conservative, diagnostic-friendly, and modular, so that each sub-adjustment can be enabled or disabled independently for experimentation and debugging.
 
 The process must be available from the Process menu and expose a user interface with detailed tooltips for all parameters.
@@ -15,6 +17,7 @@ The process must be available from the Process menu and expose a user interface 
 - Preferably calibrated subframes
 - Preferably before registration
 - Image orientation must still match the sensor’s original row orientation
+- Residual banding should remain visually horizontal across the frame
 
 ### Intended defect
 - Horizontal row banding
@@ -26,6 +29,7 @@ The process must be available from the Process menu and expose a user interface 
 - Color / RGB correction
 - Vertical banding
 - Correction on already rotated / registered frames
+- Correction of slightly tilted row banding after stacking or geometric transforms
 - Fully automatic gradient removal
 - Fully automatic star extraction if the external star mask is not available
 
@@ -145,6 +149,7 @@ The interface should be organized into collapsible groups.
   - The image should be monochrome
   - The image should be linear
   - The image should not be geometrically transformed relative to sensor rows
+  - Slight post-stacking row tilt is not supported in v1; if the banding is no longer horizontal, correction may be unreliable
 
 If these constraints are violated, the process should issue a warning but still allow execution unless the user explicitly disables permissive mode.
 
@@ -821,12 +826,23 @@ Not required for v1, but architecture should not block them:
 
 - color / RGB support
 - vertical banding support
+- robust tilted-row support based on a new global geometry model
 - automatic internal star detection
 - integration with StarXTerminator output conventions
 - structure protection from starless image
 - wavelet-domain row residual modeling
 - preview mode on ROI
 - automatic parameter suggestion from diagnostics
+
+### Deferred tilted-row support
+
+Tilted-row support was considered and explicitly deferred from the current implementation.
+
+Reasons:
+
+- local curve-correlation is too fragile against stars, masking gaps, and real astrophysical structure
+- a wrong auto-geometry estimate would feed directly into the correction and risk subtle image damage
+- a future design should prefer a more globally constrained method instead of per-column offset fitting
 
 ## Prompting notes for implementation agent
 

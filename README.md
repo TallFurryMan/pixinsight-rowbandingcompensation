@@ -1,6 +1,6 @@
 # pixinsight-rowbandingcompensation
 
-PixInsight PJSR resource package for conservative horizontal row-banding compensation on linear monochrome subframes.
+PixInsight PJSR resource package for conservative horizontal row-banding compensation on linear monochrome subframes whose residual banding is still aligned with image rows.
 
 ## What is implemented
 
@@ -48,14 +48,18 @@ Recommended input:
 - Linear monochrome subframes
 - Preferably calibrated and not yet registered
 - Sensor row orientation preserved
+- Residual banding still visually horizontal in the image
 - Optional external star mask or stars-only image
 
 Current v1 limitations:
 
 - Monochrome only
 - No preview-target execution
+- No support yet for slight post-stacking row tilt or other rotated row geometry
 - No automatic star extraction when no external star support image is provided
 - No native process-module registration under the `Process` menu
+
+If registration or stacking leaves the row defect slightly tilted, do not expect reliable correction from the current implementation. Tilt handling is intentionally deferred until a more robust global geometry method is designed.
 
 ## Compatibility Probe
 
