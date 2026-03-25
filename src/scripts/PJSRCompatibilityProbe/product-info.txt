@@ -1,0 +1,3 @@
+PJSRCompatibilityProbe
+
+Utility script to report selected PJSR widget and dialog methods available on the current PixInsight runtime.

@@ -57,6 +57,14 @@ Current v1 limitations:
 - No automatic star extraction when no external star support image is provided
 - No native process-module registration under the `Process` menu
 
+## Compatibility Probe
+
+To inspect the actual PJSR widget methods available on your PixInsight build, run:
+
+`run --execute-mode=auto "/Users/tallfurryman/Documents/Sources/pixinsight-rowbandingcompensation/src/scripts/PJSRCompatibilityProbe/PJSRCompatibilityProbe.js"`
+
+The script prints a console report for `Dialog`, `Control`, `ToolButton`, `PushButton`, `ViewList`, `NumericControl`, `SectionBar`, `Label`, and `ComboBox`.
+
 ## Signing
 
 I did not generate a `.xsgn` signature file in this workspace.

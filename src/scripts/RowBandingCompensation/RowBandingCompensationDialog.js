@@ -532,3 +532,5 @@ function RowBandingCompensationDialog( parameters )
    if ( typeof this.setMinWidth == "function" )
       this.setMinWidth( 760 );
 }
+
+RowBandingCompensationDialog.prototype = new Dialog;
