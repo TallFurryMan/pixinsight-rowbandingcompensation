@@ -400,3 +400,57 @@ function rbcConsoleHeader( text )
    console.noteln( "<end><cbr><br>" + text );
    console.noteln( new Array( text.length + 1 ).join( "=" ) );
 }
+
+function rbcNowMilliseconds()
+{
+   return (new Date).getTime();
+}
+
+function rbcFormatDuration( milliseconds )
+{
+   if ( milliseconds < 1000 )
+      return format( "%d ms", Math.round( milliseconds ) );
+
+   var seconds = milliseconds / 1000;
+   if ( seconds < 60 )
+      return format( "%.2f s", seconds );
+
+   var minutes = Math.floor( seconds / 60 );
+   seconds -= 60 * minutes;
+   return format( "%d min %.1f s", minutes, seconds );
+}
+
+function rbcLogProgress( message )
+{
+   console.writeln( message );
+   if ( typeof console.flush == "function" )
+      console.flush();
+   if ( typeof processEvents == "function" )
+      processEvents();
+}
+
+function rbcCreateProgressReporter( label, totalCount, bucketCount )
+{
+   totalCount = Math.max( 1, Math.round( totalCount ) );
+   bucketCount = bucketCount != null ? Math.max( 1, Math.round( bucketCount ) ) : 5;
+
+   var startTime = rbcNowMilliseconds();
+   var lastBucket = -1;
+
+   return function( completedCount )
+   {
+      var completed = rbcClamp( Math.round( completedCount ), 0, totalCount );
+      var bucket = completed >= totalCount ? bucketCount : Math.floor( completed * bucketCount / totalCount );
+      if ( bucket <= lastBucket )
+         return;
+
+      lastBucket = bucket;
+      rbcLogProgress( format(
+         "%s: %d%% (%d/%d, elapsed %s)",
+         label,
+         Math.round( 100 * completed / totalCount ),
+         completed,
+         totalCount,
+         rbcFormatDuration( rbcNowMilliseconds() - startTime ) ) );
+   };
+}

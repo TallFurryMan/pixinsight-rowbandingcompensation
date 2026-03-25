@@ -24,6 +24,9 @@ function RowBandingCompensationBackgroundModel( parameters )
       var sampleStep = Math.max( 1, Math.round( this.cellSize / 4 ) );
       var sampleCount = 0;
       var sampleSum = 0;
+      var sampleRows = Math.ceil( image.height / sampleStep );
+      var progress = rbcCreateProgressReporter( "  Background sampling", sampleRows, 5 );
+      var sampledRows = 0;
 
       for ( var y = 0; y < image.height; y += sampleStep )
       {
@@ -43,6 +46,8 @@ function RowBandingCompensationBackgroundModel( parameters )
             sampleSum += imageRow[ x ];
             sampleCount += 1;
          }
+
+         progress( ++sampledRows );
       }
 
       this.globalLevel = sampleCount > 0 ? sampleSum / sampleCount : image.median();
@@ -177,6 +182,7 @@ function RowBandingCompensationProfileEstimator( parameters )
 
       var insufficientRows = 0;
       var reusableBackgroundRows = [];
+      var rowProgress = rbcCreateProgressReporter( "  Row sampling", height, 5 );
 
       for ( var y = 0; y < height; ++y )
       {
@@ -217,6 +223,8 @@ function RowBandingCompensationProfileEstimator( parameters )
                this.parameters.lowRejectQuantile,
                this.parameters.highRejectQuantile );
          }
+
+         rowProgress( y + 1 );
       }
 
       if ( insufficientRows > 0 )
@@ -367,6 +375,7 @@ function RowBandingCompensationCorrectionApplier( parameters )
 
    this.apply = function( image, rowCorrection, protectionImage )
    {
+      var progress = rbcCreateProgressReporter( "  Applying correction", image.height, 5 );
       for ( var y = 0; y < image.height; ++y )
       {
          var row = rbcReadRow( image, y );
@@ -387,6 +396,7 @@ function RowBandingCompensationCorrectionApplier( parameters )
          }
 
          rbcWriteRow( image, y, row );
+         progress( y + 1 );
       }
    };
 }
