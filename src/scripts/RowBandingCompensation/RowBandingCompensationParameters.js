@@ -258,7 +258,7 @@ function RowBandingCompensationParameters()
       this.starInfluenceKernelType = "Gaussian";
 
       this.backgroundSamplingScale = 128;
-      this.backgroundSmoothingStrength = 3;
+      this.backgroundSmoothingStrength = 4;
 
       this.rowEstimatorType = "TrimmedMean";
       this.lowRejectQuantile = 0.05;
