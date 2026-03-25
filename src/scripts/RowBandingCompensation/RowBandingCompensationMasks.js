@@ -16,27 +16,43 @@ function RowBandingCompensationMaskBuilder( parameters )
    {
       var maskSet = new RowBandingCompensationMaskSet();
 
-      var sourceView = null;
+      var maskSourceView = null;
+      var analysisSourceView = null;
+
       if ( starMaskView != null )
       {
-         sourceView = starMaskView;
-         maskSet.sourceLabel = "star mask";
+         maskSourceView = starMaskView;
+         maskSet.sourceLabel = starsOnlyView != null ? "star mask + stars-only image" : "star mask";
       }
       else if ( starsOnlyView != null )
       {
-         sourceView = starsOnlyView;
+         maskSourceView = starsOnlyView;
          maskSet.sourceLabel = "stars-only image";
       }
-      else
-         return maskSet;
 
-      maskSet.baseImage = rbcGrayImageFromView( sourceView );
-      rbcNormalizeImage( maskSet.baseImage );
+      if ( maskSourceView != null )
+      {
+         maskSet.baseImage = rbcGrayImageFromView( maskSourceView );
+         rbcNormalizeImage( maskSet.baseImage );
+         maskSet.exclusionImage = this.buildExclusionMask( maskSet.baseImage );
+         maskSet.protectionImage = this.buildProtectionMask( maskSet.baseImage );
+         maskSet.hasMask = true;
+      }
 
-      maskSet.analysisImage = rbcCopyImage( maskSet.baseImage );
-      maskSet.exclusionImage = this.buildExclusionMask( maskSet.baseImage );
-      maskSet.protectionImage = this.buildProtectionMask( maskSet.baseImage );
-      maskSet.hasMask = true;
+      if ( starsOnlyView != null )
+      {
+         analysisSourceView = starsOnlyView;
+         if ( maskSet.sourceLabel.length == 0 )
+            maskSet.sourceLabel = "stars-only image";
+      }
+      else if ( maskSet.baseImage != null )
+         maskSet.analysisImage = rbcCopyImage( maskSet.baseImage );
+
+      if ( analysisSourceView != null )
+      {
+         maskSet.analysisImage = rbcGrayImageFromView( analysisSourceView );
+         rbcNormalizeImage( maskSet.analysisImage );
+      }
 
       return maskSet;
    };

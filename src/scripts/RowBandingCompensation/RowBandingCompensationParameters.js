@@ -15,11 +15,13 @@ var RBC_TOOLTIPS = {
    starMaskViewId:
       "<p>Optional external star mask used to exclude stars from row-background estimation and " +
       "to protect stars while corrections are applied.</p>" +
+      "<p>If both a star mask and a stars-only image are provided, this input defines the exclusion/protection masks while the stars-only image is used for star analysis.</p>" +
       "<p>Use this when you already have a reliable mask. Disable star-dependent features if the mask is inaccurate.</p>",
 
    starsOnlyViewId:
       "<p>Optional stars-only image used to derive star influence and, if needed, an internal mask.</p>" +
-      "<p>This is useful when the banding seems strongly correlated with bright stars. Leave empty if unavailable.</p>",
+      "<p>If no star mask is provided, this image is thresholded internally to build the exclusion/protection masks. This is a good match for StarXTerminator or StarNet star-only outputs.</p>" +
+      "<p>If both inputs are provided, this image is used for star analysis while the star mask supplies the masks.</p>",
 
    enableSoftBackgroundModel:
       "<p>Builds a very soft internal 2D background support model before measuring rows. This helps keep broad gradients " +
