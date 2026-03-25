@@ -34,13 +34,14 @@ function RowBandingCompensationDiagnosticsExporter( parameters )
 
    this.publishProfilePlot = function( targetId, suffix, values )
    {
-      var width = Math.max( 64, values.length );
-      var height = 256;
+      var width = 256;
+      var height = Math.max( 64, values.length );
       var window = new ImageWindow( width, height, 1, 32, true, false, rbcGenerateUniqueId( targetId + "_" + suffix ) );
       var image = window.mainView.image;
 
       window.mainView.beginProcess( UndoFlag_NoSwapFile );
       image.fill( 1 );
+      var progress = rbcCreateProgressReporter( "  Writing " + suffix + " plot", values.length, 5 );
 
       var minValue = values[ 0 ];
       var maxValue = values[ 0 ];
@@ -61,20 +62,29 @@ function RowBandingCompensationDiagnosticsExporter( parameters )
 
       if ( minValue < 0 && maxValue > 0 )
       {
-         var zeroY = height - 1 - Math.round( (-minValue / valueSpan) * (height - 1) );
-         for ( var zx = 0; zx < width; ++zx )
-            image.setSample( 0.85, zx, zeroY );
+         var zeroX = Math.round( (-minValue / valueSpan) * (width - 1) );
+         zeroX = rbcClamp( zeroX, 0, width - 1 );
+         for ( var zy = 0; zy < height; ++zy )
+            image.setSample( 0.85, zeroX, zy );
       }
 
-      for ( var x = 0; x < values.length; ++x )
+      for ( var i = 0; i < values.length; ++i )
       {
-         var y = height - 1 - Math.round( ((values[ x ] - minValue) / valueSpan) * (height - 1) );
+         var x = Math.round( ((values[ i ] - minValue) / valueSpan) * (width - 1) );
+         var y = values.length > 1
+            ? Math.round( i * (height - 1) / (values.length - 1) )
+            : Math.round( 0.5 * (height - 1) );
+
+         x = rbcClamp( x, 0, width - 1 );
          y = rbcClamp( y, 0, height - 1 );
+
          image.setSample( 0.05, x, y );
-         if ( y > 0 )
-            image.setSample( 0.25, x, y - 1 );
-         if ( y < height - 1 )
-            image.setSample( 0.25, x, y + 1 );
+         if ( x > 0 )
+            image.setSample( 0.25, x - 1, y );
+         if ( x < width - 1 )
+            image.setSample( 0.25, x + 1, y );
+
+         progress( i + 1 );
       }
 
       window.mainView.endProcess();
