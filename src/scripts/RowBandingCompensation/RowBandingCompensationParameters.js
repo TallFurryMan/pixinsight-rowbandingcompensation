@@ -174,7 +174,7 @@ var RBC_TOOLTIPS = {
       "<p>ClampLow prevents negative values, Clamp01 forces the standard normalized range, and None leaves values untouched for maximum fidelity.</p>",
 
    iterations:
-      "<p>Maximum number of conservative correction passes.</p>" +
+      "<p>Maximum number of conservative correction passes when iterative processing is enabled.</p>" +
       "<p>Use higher values when the process is configured to converge gradually. More iterations increase runtime and can slowly accumulate bias if the model is too aggressive.</p>",
 
    convergenceEpsilon:
@@ -352,7 +352,7 @@ function RowBandingCompensationParameters()
       if ( RBC_CLIPPING_POLICIES.indexOf( this.clippingPolicy ) < 0 )
          this.clippingPolicy = "ClampLow";
 
-      this.iterations = rbcClamp( Math.round( this.iterations ), 1, 300 );
+      this.iterations = rbcClamp( Math.round( this.iterations ), 0, 150 );
       this.convergenceEpsilon = rbcClamp( this.convergenceEpsilon, RBC_CONVERGENCE_EPSILON_MIN, RBC_CONVERGENCE_EPSILON_MAX );
    };
 

@@ -40,7 +40,7 @@ function RowBandingCompensationEngine( parameters )
       if ( this.parameters.enableIterations && !this.parameters.enableConvergence )
          console.writeln( "Convergence stop: disabled; the full iteration count will be used." );
 
-      var iterations = this.parameters.enableIterations ? this.parameters.iterations : 1;
+      var iterations = this.parameters.enableIterations ? Math.max( 1, this.parameters.iterations ) : 1;
       var previousResidual = null;
       var previousResidualRms = null;
       var consecutiveResidualRmsIncreaseCount = 0;

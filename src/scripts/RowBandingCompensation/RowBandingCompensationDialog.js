@@ -24,9 +24,11 @@ function RowBandingCompensationDialog( parameters )
       "<p>Conservative row-wise banding compensation for linear monochrome subframes. " +
       "The implementation follows the PJSR script path described in the project spec, with optional star-guided modulation, " +
       "confidence weighting and diagnostic outputs.</p>" +
-      "<p>This version creates corrected output as a new image and can export a process instance for repeatable execution.</p>";
+      "<p>This version creates corrected output as a new image and can export a process instance for repeatable execution.</p>" +
+      "<p>Typical use: select the target image, optionally provide a stars-only companion image derived from it, and add a separate star mask only if you already have one. " +
+      "Iterative processing is intended to be monitored in the console: watch the residual values, especially <i>Residual |95%| amplitude</i>, and inspect a stretched result or difference image for persistent rows, sign inversions, or star-side artifacts.</p>";
 
-   this.createSection = function( title )
+   this.createSection = function( title, toolTipKey, valueGetter, valueSetter, collapsed )
    {
       var control = new Control( dialog );
       control.sizer = new VerticalSizer;
@@ -34,7 +36,22 @@ function RowBandingCompensationDialog( parameters )
       control.sizer.spacing = 4;
 
       var bar = new SectionBar( dialog, title );
+      if ( toolTipKey != null )
+      {
+         bar.enableCheckBox();
+         bar.checkBox.checked = valueGetter();
+         bar.toolTip = rbcTooltip( toolTipKey );
+         bar.checkBox.toolTip = bar.toolTip;
+         bar.onCheckSection = function( sectionBar )
+         {
+            valueSetter( sectionBar.checkBox.checked );
+            dialog.updateControlStates();
+         };
+      }
       bar.setSection( control );
+      if ( collapsed )
+         control.hide();
+      bar.updateIcon();
       return { bar: bar, control: control };
    };
 
@@ -189,7 +206,7 @@ function RowBandingCompensationDialog( parameters )
       return viewList;
    };
 
-   this.inputSection = this.createSection( "Input" );
+   this.inputSection = this.createSection( "Input", null, null, null, false );
    this.targetViewList = this.addViewSelector(
       this.inputSection.control.sizer,
       "Target image:",
@@ -197,13 +214,6 @@ function RowBandingCompensationDialog( parameters )
       true,
       function() { return dialog.parameters.targetViewId; },
       function( value ) { dialog.parameters.targetViewId = value; } );
-   this.starMaskViewList = this.addViewSelector(
-      this.inputSection.control.sizer,
-      "Star mask view:",
-      "starMaskViewId",
-      false,
-      function() { return dialog.parameters.starMaskViewId; },
-      function( value ) { dialog.parameters.starMaskViewId = value; } );
    this.starsOnlyViewList = this.addViewSelector(
       this.inputSection.control.sizer,
       "Stars-only view:",
@@ -211,129 +221,18 @@ function RowBandingCompensationDialog( parameters )
       false,
       function() { return dialog.parameters.starsOnlyViewId; },
       function( value ) { dialog.parameters.starsOnlyViewId = value; } );
+   this.starMaskViewList = this.addViewSelector(
+      this.inputSection.control.sizer,
+      "Star mask view:",
+      "starMaskViewId",
+      false,
+      function() { return dialog.parameters.starMaskViewId; },
+      function( value ) { dialog.parameters.starMaskViewId = value; } );
 
-   this.flagsSection = this.createSection( "Global Enable Flags" );
-   this.enableSoftBackgroundCheck = this.addCheckBoxRow( this.flagsSection.control.sizer, "Soft 2D background preconditioning:", "enableSoftBackgroundModel",
-      function() { return dialog.parameters.enableSoftBackgroundModel; },
-      function( value ) { dialog.parameters.enableSoftBackgroundModel = value; } );
-   this.enableRowTrendCheck = this.addCheckBoxRow( this.flagsSection.control.sizer, "Row trend correction:", "enableRowTrendCorrection",
-      function() { return dialog.parameters.enableRowTrendCorrection; },
-      function( value ) { dialog.parameters.enableRowTrendCorrection = value; } );
-   this.enableStarInfluenceCheck = this.addCheckBoxRow( this.flagsSection.control.sizer, "Star influence modulation:", "enableStarInfluence",
-      function() { return dialog.parameters.enableStarInfluence; },
-      function( value ) { dialog.parameters.enableStarInfluence = value; } );
-   this.enableVisibilityCheck = this.addCheckBoxRow( this.flagsSection.control.sizer, "Row visibility modulation:", "enableRowVisibility",
-      function() { return dialog.parameters.enableRowVisibility; },
-      function( value ) { dialog.parameters.enableRowVisibility = value; } );
-   this.enableConfidenceCheck = this.addCheckBoxRow( this.flagsSection.control.sizer, "Confidence modulation:", "enableConfidenceWeighting",
-      function() { return dialog.parameters.enableConfidenceWeighting; },
-      function( value ) { dialog.parameters.enableConfidenceWeighting = value; } );
-   this.enableProtectionCheck = this.addCheckBoxRow( this.flagsSection.control.sizer, "Protection mask during application:", "enableProtectionMask",
-      function() { return dialog.parameters.enableProtectionMask; },
-      function( value ) { dialog.parameters.enableProtectionMask = value; } );
-   this.enableIterationsCheck = this.addCheckBoxRow( this.flagsSection.control.sizer, "Iterative processing:", "enableIterations",
+   this.iterationSection = this.createSection( "Iteration Control", "enableIterations",
       function() { return dialog.parameters.enableIterations; },
-      function( value ) { dialog.parameters.enableIterations = value; } );
-   this.enableDiagnosticsCheck = this.addCheckBoxRow( this.flagsSection.control.sizer, "Diagnostic outputs:", "enableDiagnostics",
-      function() { return dialog.parameters.enableDiagnostics; },
-      function( value ) { dialog.parameters.enableDiagnostics = value; } );
-
-   this.starSection = this.createSection( "Star Mask And Object Analysis" );
-   this.maskThresholdControl = this.addNumericControl( this.starSection.control.sizer, "Mask threshold:", "maskThreshold", 0, 1, 3, 100,
-      function() { return dialog.parameters.maskThreshold; },
-      function( value ) { dialog.parameters.maskThreshold = value; } );
-   this.maskDilationControl = this.addNumericControl( this.starSection.control.sizer, "Mask dilation radius:", "maskDilationRadius", 0, 20, 0, 20,
-      function() { return dialog.parameters.maskDilationRadius; },
-      function( value ) { dialog.parameters.maskDilationRadius = Math.round( value ); } );
-   this.maskBlurControl = this.addNumericControl( this.starSection.control.sizer, "Mask blur radius:", "maskBlurRadius", 0, 20, 2, 200,
-      function() { return dialog.parameters.maskBlurRadius; },
-      function( value ) { dialog.parameters.maskBlurRadius = value; } );
-   this.minimumStarAreaControl = this.addNumericControl( this.starSection.control.sizer, "Minimum star area:", "minimumStarArea", 1, 256, 0, 255,
-      function() { return dialog.parameters.minimumStarArea; },
-      function( value ) { dialog.parameters.minimumStarArea = Math.round( value ); } );
-   this.brightnessThresholdControl = this.addNumericControl( this.starSection.control.sizer, "Brightness threshold:", "brightnessThreshold", 0, 1, 3, 100,
-      function() { return dialog.parameters.brightnessThreshold; },
-      function( value ) { dialog.parameters.brightnessThreshold = value; } );
-   this.saturationThresholdControl = this.addNumericControl( this.starSection.control.sizer, "Saturation threshold:", "saturationThreshold", 0, 1, 3, 100,
-      function() { return dialog.parameters.saturationThreshold; },
-      function( value ) { dialog.parameters.saturationThreshold = value; } );
-   this.starPeakWeightControl = this.addNumericControl( this.starSection.control.sizer, "Star peak weight:", "starPeakWeight", 0, 2, 2, 200,
-      function() { return dialog.parameters.starPeakWeight; },
-      function( value ) { dialog.parameters.starPeakWeight = value; } );
-   this.starFluxWeightControl = this.addNumericControl( this.starSection.control.sizer, "Star flux weight:", "starFluxWeight", 0, 2, 2, 200,
-      function() { return dialog.parameters.starFluxWeight; },
-      function( value ) { dialog.parameters.starFluxWeight = value; } );
-   this.starSaturationWeightControl = this.addNumericControl( this.starSection.control.sizer, "Star saturation weight:", "starSaturationWeight", 0, 2, 2, 200,
-      function() { return dialog.parameters.starSaturationWeight; },
-      function( value ) { dialog.parameters.starSaturationWeight = value; } );
-   this.starRadiusWeightControl = this.addNumericControl( this.starSection.control.sizer, "Star radius weight:", "starRadiusWeight", 0, 2, 2, 200,
-      function() { return dialog.parameters.starRadiusWeight; },
-      function( value ) { dialog.parameters.starRadiusWeight = value; } );
-   this.starInfluenceRadiusControl = this.addNumericControl( this.starSection.control.sizer, "Star influence radius:", "starInfluenceRadius", 0, 20, 0, 20,
-      function() { return dialog.parameters.starInfluenceRadius; },
-      function( value ) { dialog.parameters.starInfluenceRadius = Math.round( value ); } );
-   this.starKernelCombo = this.addComboBoxRow( this.starSection.control.sizer, "Influence kernel:", "starInfluenceKernelType", RBC_KERNEL_TYPES,
-      function() { return dialog.parameters.starInfluenceKernelType; },
-      function( value ) { dialog.parameters.starInfluenceKernelType = value; } );
-
-   this.backgroundSection = this.createSection( "Background Estimation" );
-   this.rowEstimatorCombo = this.addComboBoxRow( this.backgroundSection.control.sizer, "Row estimator type:", "rowEstimatorType", RBC_ROW_ESTIMATORS,
-      function() { return dialog.parameters.rowEstimatorType; },
-      function( value ) { dialog.parameters.rowEstimatorType = value; } );
-   this.lowRejectControl = this.addNumericControl( this.backgroundSection.control.sizer, "Low rejection quantile:", "lowRejectQuantile", 0, 0.49, 3, 100,
-      function() { return dialog.parameters.lowRejectQuantile; },
-      function( value ) { dialog.parameters.lowRejectQuantile = value; } );
-   this.highRejectControl = this.addNumericControl( this.backgroundSection.control.sizer, "High rejection quantile:", "highRejectQuantile", 0, 0.49, 3, 100,
-      function() { return dialog.parameters.highRejectQuantile; },
-      function( value ) { dialog.parameters.highRejectQuantile = value; } );
-   this.minValidPixelsControl = this.addNumericControl( this.backgroundSection.control.sizer, "Minimum valid pixels per row:", "minimumValidPixelsPerRow", 8, 4096, 0, 500,
-      function() { return dialog.parameters.minimumValidPixelsPerRow; },
-      function( value ) { dialog.parameters.minimumValidPixelsPerRow = Math.round( value ); } );
-   this.backgroundScaleControl = this.addNumericControl( this.backgroundSection.control.sizer, "Soft background sampling scale:", "backgroundSamplingScale", 8, 1024, 0, 512,
-      function() { return dialog.parameters.backgroundSamplingScale; },
-      function( value ) { dialog.parameters.backgroundSamplingScale = Math.round( value ); } );
-   this.backgroundSmoothControl = this.addNumericControl( this.backgroundSection.control.sizer, "Soft background smoothing strength:", "backgroundSmoothingStrength", 0, 10, 0, 10,
-      function() { return dialog.parameters.backgroundSmoothingStrength; },
-      function( value ) { dialog.parameters.backgroundSmoothingStrength = Math.round( value ); } );
-
-   this.visibilitySection = this.createSection( "Row Trend And Visibility" );
-   this.rowTrendRadiusControl = this.addNumericControl( this.visibilitySection.control.sizer, "Row trend smoothing radius:", "rowTrendSmoothingRadius", 1, 256, 0, 255,
-      function() { return dialog.parameters.rowTrendSmoothingRadius; },
-      function( value ) { dialog.parameters.rowTrendSmoothingRadius = Math.round( value ); } );
-   this.visibilityModeCombo = this.addComboBoxRow( this.visibilitySection.control.sizer, "Visibility estimator mode:", "visibilityMode", RBC_VISIBILITY_MODES,
-      function() { return dialog.parameters.visibilityMode; },
-      function( value ) { dialog.parameters.visibilityMode = value; } );
-   this.visibilityRadiusControl = this.addNumericControl( this.visibilitySection.control.sizer, "Visibility smoothing radius:", "visibilitySmoothingRadius", 0, 64, 0, 64,
-      function() { return dialog.parameters.visibilitySmoothingRadius; },
-      function( value ) { dialog.parameters.visibilitySmoothingRadius = Math.round( value ); } );
-   this.visibilityStrengthControl = this.addNumericControl( this.visibilitySection.control.sizer, "Visibility strength:", "visibilityStrength", 0, 2, 2, 200,
-      function() { return dialog.parameters.visibilityStrength; },
-      function( value ) { dialog.parameters.visibilityStrength = value; } );
-
-   this.correctionSection = this.createSection( "Correction Model" );
-   this.globalStrengthControl = this.addNumericControl( this.correctionSection.control.sizer, "Global correction strength:", "globalStrength", 0, 3, 2, 300,
-      function() { return dialog.parameters.globalStrength; },
-      function( value ) { dialog.parameters.globalStrength = value; } );
-   this.localStarBoostControl = this.addNumericControl( this.correctionSection.control.sizer, "Local star-weighted boost:", "localStarBoost", 0, 3, 2, 300,
-      function() { return dialog.parameters.localStarBoost; },
-      function( value ) { dialog.parameters.localStarBoost = value; } );
-   this.confidenceStrengthControl = this.addNumericControl( this.correctionSection.control.sizer, "Confidence weighting strength:", "confidenceStrength", 0, 2, 2, 200,
-      function() { return dialog.parameters.confidenceStrength; },
-      function( value ) { dialog.parameters.confidenceStrength = value; } );
-   this.protectionStrengthControl = this.addNumericControl( this.correctionSection.control.sizer, "Protection strength:", "protectionStrength", 0, 1, 2, 100,
-      function() { return dialog.parameters.protectionStrength; },
-      function( value ) { dialog.parameters.protectionStrength = value; } );
-   this.maxCorrectionControl = this.addNumericControl( this.correctionSection.control.sizer, "Maximum per-iteration correction:", "maximumPerIterationCorrection", 0, 0.25, 5, 250,
-      function() { return dialog.parameters.maximumPerIterationCorrection; },
-      function( value ) { dialog.parameters.maximumPerIterationCorrection = value; } );
-   this.clippingPolicyCombo = this.addComboBoxRow( this.correctionSection.control.sizer, "Additive correction clipping policy:", "clippingPolicy", RBC_CLIPPING_POLICIES,
-      function() { return dialog.parameters.clippingPolicy; },
-      function( value ) { dialog.parameters.clippingPolicy = value; } );
-
-   this.iterationSection = this.createSection( "Iteration Control" );
-   this.iterationsControl = this.addNumericControl( this.iterationSection.control.sizer, "Number of iterations:", "iterations", 1, 300, 0, 300,
-      function() { return dialog.parameters.iterations; },
-      function( value ) { dialog.parameters.iterations = Math.round( value ); } );
+      function( value ) { dialog.parameters.enableIterations = value; },
+      false );
    this.enableConvergenceCheck = this.addCheckBoxRow( this.iterationSection.control.sizer, "Enable convergence stop:", "enableConvergence",
       function() { return dialog.parameters.enableConvergence; },
       function( value ) { dialog.parameters.enableConvergence = value; } );
@@ -362,6 +261,9 @@ function RowBandingCompensationDialog( parameters )
             mantissa * Math.pow( 10, exponent ) );
          dialog.syncConvergenceControlsFromParameters();
       } );
+   this.iterationsControl = this.addNumericControl( this.iterationSection.control.sizer, "Maximum number of iterations:", "iterations", 0, 150, 0, 150,
+      function() { return dialog.parameters.iterations; },
+      function( value ) { dialog.parameters.iterations = Math.round( value ); } );
    this.recomputeMasksCheck = this.addCheckBoxRow( this.iterationSection.control.sizer, "Recompute masks each iteration:", "recomputeMasksEachIteration",
       function() { return dialog.parameters.recomputeMasksEachIteration; },
       function( value ) { dialog.parameters.recomputeMasksEachIteration = value; } );
@@ -369,7 +271,128 @@ function RowBandingCompensationDialog( parameters )
       function() { return dialog.parameters.recomputeStarInfluenceEachIteration; },
       function( value ) { dialog.parameters.recomputeStarInfluenceEachIteration = value; } );
 
-   this.diagnosticsSection = this.createSection( "Diagnostics" );
+   this.starSupportSection = this.createSection( "Star Support", null, null, null, true );
+   this.maskThresholdControl = this.addNumericControl( this.starSupportSection.control.sizer, "Mask threshold:", "maskThreshold", 0, 1, 3, 100,
+      function() { return dialog.parameters.maskThreshold; },
+      function( value ) { dialog.parameters.maskThreshold = value; } );
+   this.maskDilationControl = this.addNumericControl( this.starSupportSection.control.sizer, "Mask dilation radius:", "maskDilationRadius", 0, 20, 0, 20,
+      function() { return dialog.parameters.maskDilationRadius; },
+      function( value ) { dialog.parameters.maskDilationRadius = Math.round( value ); } );
+   this.maskBlurControl = this.addNumericControl( this.starSupportSection.control.sizer, "Mask blur radius:", "maskBlurRadius", 0, 20, 2, 200,
+      function() { return dialog.parameters.maskBlurRadius; },
+      function( value ) { dialog.parameters.maskBlurRadius = value; } );
+   this.minimumStarAreaControl = this.addNumericControl( this.starSupportSection.control.sizer, "Minimum star area:", "minimumStarArea", 1, 256, 0, 255,
+      function() { return dialog.parameters.minimumStarArea; },
+      function( value ) { dialog.parameters.minimumStarArea = Math.round( value ); } );
+   this.brightnessThresholdControl = this.addNumericControl( this.starSupportSection.control.sizer, "Brightness threshold:", "brightnessThreshold", 0, 1, 3, 100,
+      function() { return dialog.parameters.brightnessThreshold; },
+      function( value ) { dialog.parameters.brightnessThreshold = value; } );
+   this.saturationThresholdControl = this.addNumericControl( this.starSupportSection.control.sizer, "Saturation threshold:", "saturationThreshold", 0, 1, 3, 100,
+      function() { return dialog.parameters.saturationThreshold; },
+      function( value ) { dialog.parameters.saturationThreshold = value; } );
+
+   this.softBackgroundSection = this.createSection( "Soft Background Model", "enableSoftBackgroundModel",
+      function() { return dialog.parameters.enableSoftBackgroundModel; },
+      function( value ) { dialog.parameters.enableSoftBackgroundModel = value; },
+      true );
+   this.backgroundScaleControl = this.addNumericControl( this.softBackgroundSection.control.sizer, "Soft background sampling scale:", "backgroundSamplingScale", 8, 1024, 0, 512,
+      function() { return dialog.parameters.backgroundSamplingScale; },
+      function( value ) { dialog.parameters.backgroundSamplingScale = Math.round( value ); } );
+   this.backgroundSmoothControl = this.addNumericControl( this.softBackgroundSection.control.sizer, "Soft background smoothing strength:", "backgroundSmoothingStrength", 0, 10, 0, 10,
+      function() { return dialog.parameters.backgroundSmoothingStrength; },
+      function( value ) { dialog.parameters.backgroundSmoothingStrength = Math.round( value ); } );
+
+   this.rowSamplingSection = this.createSection( "Row Sampling", null, null, null, true );
+   this.rowEstimatorCombo = this.addComboBoxRow( this.rowSamplingSection.control.sizer, "Row estimator type:", "rowEstimatorType", RBC_ROW_ESTIMATORS,
+      function() { return dialog.parameters.rowEstimatorType; },
+      function( value ) { dialog.parameters.rowEstimatorType = value; } );
+   this.lowRejectControl = this.addNumericControl( this.rowSamplingSection.control.sizer, "Low rejection quantile:", "lowRejectQuantile", 0, 0.49, 3, 100,
+      function() { return dialog.parameters.lowRejectQuantile; },
+      function( value ) { dialog.parameters.lowRejectQuantile = value; } );
+   this.highRejectControl = this.addNumericControl( this.rowSamplingSection.control.sizer, "High rejection quantile:", "highRejectQuantile", 0, 0.49, 3, 100,
+      function() { return dialog.parameters.highRejectQuantile; },
+      function( value ) { dialog.parameters.highRejectQuantile = value; } );
+   this.minValidPixelsControl = this.addNumericControl( this.rowSamplingSection.control.sizer, "Minimum valid pixels per row:", "minimumValidPixelsPerRow", 8, 4096, 0, 500,
+      function() { return dialog.parameters.minimumValidPixelsPerRow; },
+      function( value ) { dialog.parameters.minimumValidPixelsPerRow = Math.round( value ); } );
+
+   this.rowModelSection = this.createSection( "Row Model", "enableRowTrendCorrection",
+      function() { return dialog.parameters.enableRowTrendCorrection; },
+      function( value ) { dialog.parameters.enableRowTrendCorrection = value; },
+      true );
+   this.rowTrendRadiusControl = this.addNumericControl( this.rowModelSection.control.sizer, "Row trend smoothing radius:", "rowTrendSmoothingRadius", 1, 256, 0, 255,
+      function() { return dialog.parameters.rowTrendSmoothingRadius; },
+      function( value ) { dialog.parameters.rowTrendSmoothingRadius = Math.round( value ); } );
+   this.globalStrengthControl = this.addNumericControl( this.rowModelSection.control.sizer, "Global correction strength:", "globalStrength", 0, 3, 2, 300,
+      function() { return dialog.parameters.globalStrength; },
+      function( value ) { dialog.parameters.globalStrength = value; } );
+   this.maxCorrectionControl = this.addNumericControl( this.rowModelSection.control.sizer, "Maximum per-iteration correction:", "maximumPerIterationCorrection", 0, 0.25, 5, 250,
+      function() { return dialog.parameters.maximumPerIterationCorrection; },
+      function( value ) { dialog.parameters.maximumPerIterationCorrection = value; } );
+   this.clippingPolicyCombo = this.addComboBoxRow( this.rowModelSection.control.sizer, "Additive correction clipping policy:", "clippingPolicy", RBC_CLIPPING_POLICIES,
+      function() { return dialog.parameters.clippingPolicy; },
+      function( value ) { dialog.parameters.clippingPolicy = value; } );
+
+   this.starInfluenceSection = this.createSection( "Star Influence Modulation", "enableStarInfluence",
+      function() { return dialog.parameters.enableStarInfluence; },
+      function( value ) { dialog.parameters.enableStarInfluence = value; },
+      true );
+   this.starPeakWeightControl = this.addNumericControl( this.starInfluenceSection.control.sizer, "Star peak weight:", "starPeakWeight", 0, 2, 2, 200,
+      function() { return dialog.parameters.starPeakWeight; },
+      function( value ) { dialog.parameters.starPeakWeight = value; } );
+   this.starFluxWeightControl = this.addNumericControl( this.starInfluenceSection.control.sizer, "Star flux weight:", "starFluxWeight", 0, 2, 2, 200,
+      function() { return dialog.parameters.starFluxWeight; },
+      function( value ) { dialog.parameters.starFluxWeight = value; } );
+   this.starSaturationWeightControl = this.addNumericControl( this.starInfluenceSection.control.sizer, "Star saturation weight:", "starSaturationWeight", 0, 2, 2, 200,
+      function() { return dialog.parameters.starSaturationWeight; },
+      function( value ) { dialog.parameters.starSaturationWeight = value; } );
+   this.starRadiusWeightControl = this.addNumericControl( this.starInfluenceSection.control.sizer, "Star radius weight:", "starRadiusWeight", 0, 2, 2, 200,
+      function() { return dialog.parameters.starRadiusWeight; },
+      function( value ) { dialog.parameters.starRadiusWeight = value; } );
+   this.starInfluenceRadiusControl = this.addNumericControl( this.starInfluenceSection.control.sizer, "Star influence radius:", "starInfluenceRadius", 0, 20, 0, 20,
+      function() { return dialog.parameters.starInfluenceRadius; },
+      function( value ) { dialog.parameters.starInfluenceRadius = Math.round( value ); } );
+   this.starKernelCombo = this.addComboBoxRow( this.starInfluenceSection.control.sizer, "Influence kernel:", "starInfluenceKernelType", RBC_KERNEL_TYPES,
+      function() { return dialog.parameters.starInfluenceKernelType; },
+      function( value ) { dialog.parameters.starInfluenceKernelType = value; } );
+   this.localStarBoostControl = this.addNumericControl( this.starInfluenceSection.control.sizer, "Local star-weighted boost:", "localStarBoost", 0, 3, 2, 300,
+      function() { return dialog.parameters.localStarBoost; },
+      function( value ) { dialog.parameters.localStarBoost = value; } );
+
+   this.protectionSection = this.createSection( "Protection Mask", "enableProtectionMask",
+      function() { return dialog.parameters.enableProtectionMask; },
+      function( value ) { dialog.parameters.enableProtectionMask = value; },
+      true );
+   this.protectionStrengthControl = this.addNumericControl( this.protectionSection.control.sizer, "Protection strength:", "protectionStrength", 0, 1, 2, 100,
+      function() { return dialog.parameters.protectionStrength; },
+      function( value ) { dialog.parameters.protectionStrength = value; } );
+
+   this.visibilitySection = this.createSection( "Visibility Modulation", "enableRowVisibility",
+      function() { return dialog.parameters.enableRowVisibility; },
+      function( value ) { dialog.parameters.enableRowVisibility = value; },
+      true );
+   this.visibilityModeCombo = this.addComboBoxRow( this.visibilitySection.control.sizer, "Visibility estimator mode:", "visibilityMode", RBC_VISIBILITY_MODES,
+      function() { return dialog.parameters.visibilityMode; },
+      function( value ) { dialog.parameters.visibilityMode = value; } );
+   this.visibilityRadiusControl = this.addNumericControl( this.visibilitySection.control.sizer, "Visibility smoothing radius:", "visibilitySmoothingRadius", 0, 64, 0, 64,
+      function() { return dialog.parameters.visibilitySmoothingRadius; },
+      function( value ) { dialog.parameters.visibilitySmoothingRadius = Math.round( value ); } );
+   this.visibilityStrengthControl = this.addNumericControl( this.visibilitySection.control.sizer, "Visibility strength:", "visibilityStrength", 0, 2, 2, 200,
+      function() { return dialog.parameters.visibilityStrength; },
+      function( value ) { dialog.parameters.visibilityStrength = value; } );
+
+   this.confidenceSection = this.createSection( "Confidence Modulation", "enableConfidenceWeighting",
+      function() { return dialog.parameters.enableConfidenceWeighting; },
+      function( value ) { dialog.parameters.enableConfidenceWeighting = value; },
+      true );
+   this.confidenceStrengthControl = this.addNumericControl( this.confidenceSection.control.sizer, "Confidence weighting strength:", "confidenceStrength", 0, 2, 2, 200,
+      function() { return dialog.parameters.confidenceStrength; },
+      function( value ) { dialog.parameters.confidenceStrength = value; } );
+
+   this.diagnosticsSection = this.createSection( "Diagnostics", "enableDiagnostics",
+      function() { return dialog.parameters.enableDiagnostics; },
+      function( value ) { dialog.parameters.enableDiagnostics = value; },
+      true );
    this.outputSoftBackgroundCheck = this.addCheckBoxRow( this.diagnosticsSection.control.sizer, "Output soft background model:", "outputSoftBackgroundModel",
       function() { return dialog.parameters.outputSoftBackgroundModel; },
       function( value ) { dialog.parameters.outputSoftBackgroundModel = value; } );
@@ -459,18 +482,24 @@ function RowBandingCompensationDialog( parameters )
    this.sizer.add( this.helpLabel );
    this.sizer.add( this.inputSection.bar );
    this.sizer.add( this.inputSection.control );
-   this.sizer.add( this.flagsSection.bar );
-   this.sizer.add( this.flagsSection.control );
-   this.sizer.add( this.starSection.bar );
-   this.sizer.add( this.starSection.control );
-   this.sizer.add( this.backgroundSection.bar );
-   this.sizer.add( this.backgroundSection.control );
-   this.sizer.add( this.visibilitySection.bar );
-   this.sizer.add( this.visibilitySection.control );
-   this.sizer.add( this.correctionSection.bar );
-   this.sizer.add( this.correctionSection.control );
    this.sizer.add( this.iterationSection.bar );
    this.sizer.add( this.iterationSection.control );
+   this.sizer.add( this.starSupportSection.bar );
+   this.sizer.add( this.starSupportSection.control );
+   this.sizer.add( this.softBackgroundSection.bar );
+   this.sizer.add( this.softBackgroundSection.control );
+   this.sizer.add( this.rowSamplingSection.bar );
+   this.sizer.add( this.rowSamplingSection.control );
+   this.sizer.add( this.rowModelSection.bar );
+   this.sizer.add( this.rowModelSection.control );
+   this.sizer.add( this.starInfluenceSection.bar );
+   this.sizer.add( this.starInfluenceSection.control );
+   this.sizer.add( this.protectionSection.bar );
+   this.sizer.add( this.protectionSection.control );
+   this.sizer.add( this.visibilitySection.bar );
+   this.sizer.add( this.visibilitySection.control );
+   this.sizer.add( this.confidenceSection.bar );
+   this.sizer.add( this.confidenceSection.control );
    this.sizer.add( this.diagnosticsSection.bar );
    this.sizer.add( this.diagnosticsSection.control );
    this.sizer.add( this.buttonSizer );
@@ -487,15 +516,15 @@ function RowBandingCompensationDialog( parameters )
       var starsOnlyView = rbcFindViewById( dialog.parameters.starsOnlyViewId );
       dialog.starsOnlyViewList.currentView = starsOnlyView != null ? starsOnlyView : new View();
 
-      dialog.enableSoftBackgroundCheck.checked = dialog.parameters.enableSoftBackgroundModel;
-      dialog.enableRowTrendCheck.checked = dialog.parameters.enableRowTrendCorrection;
-      dialog.enableStarInfluenceCheck.checked = dialog.parameters.enableStarInfluence;
-      dialog.enableVisibilityCheck.checked = dialog.parameters.enableRowVisibility;
-      dialog.enableConfidenceCheck.checked = dialog.parameters.enableConfidenceWeighting;
-      dialog.enableProtectionCheck.checked = dialog.parameters.enableProtectionMask;
-      dialog.enableIterationsCheck.checked = dialog.parameters.enableIterations;
+      dialog.softBackgroundSection.bar.checkBox.checked = dialog.parameters.enableSoftBackgroundModel;
+      dialog.rowModelSection.bar.checkBox.checked = dialog.parameters.enableRowTrendCorrection;
+      dialog.starInfluenceSection.bar.checkBox.checked = dialog.parameters.enableStarInfluence;
+      dialog.visibilitySection.bar.checkBox.checked = dialog.parameters.enableRowVisibility;
+      dialog.confidenceSection.bar.checkBox.checked = dialog.parameters.enableConfidenceWeighting;
+      dialog.protectionSection.bar.checkBox.checked = dialog.parameters.enableProtectionMask;
+      dialog.iterationSection.bar.checkBox.checked = dialog.parameters.enableIterations;
       dialog.enableConvergenceCheck.checked = dialog.parameters.enableConvergence;
-      dialog.enableDiagnosticsCheck.checked = dialog.parameters.enableDiagnostics;
+      dialog.diagnosticsSection.bar.checkBox.checked = dialog.parameters.enableDiagnostics;
 
       dialog.maskThresholdControl.setValue( dialog.parameters.maskThreshold );
       dialog.maskDilationControl.setValue( dialog.parameters.maskDilationRadius );
@@ -548,46 +577,21 @@ function RowBandingCompensationDialog( parameters )
 
    this.updateControlStates = function()
    {
-      var softEnabled = dialog.parameters.enableSoftBackgroundModel;
-      dialog.backgroundScaleControl.enabled = softEnabled;
-      dialog.backgroundSmoothControl.enabled = softEnabled;
+      dialog.softBackgroundSection.control.enabled = dialog.parameters.enableSoftBackgroundModel;
+      dialog.rowModelSection.control.enabled = dialog.parameters.enableRowTrendCorrection;
+      dialog.starInfluenceSection.control.enabled = dialog.parameters.enableStarInfluence;
+      dialog.protectionSection.control.enabled = dialog.parameters.enableProtectionMask;
+      dialog.visibilitySection.control.enabled = dialog.parameters.enableRowVisibility;
+      dialog.confidenceSection.control.enabled = dialog.parameters.enableConfidenceWeighting;
+      dialog.iterationSection.control.enabled = dialog.parameters.enableIterations;
+      dialog.diagnosticsSection.control.enabled = dialog.parameters.enableDiagnostics;
 
-      var starEnabled = dialog.parameters.enableStarInfluence;
-      dialog.starPeakWeightControl.enabled = starEnabled;
-      dialog.starFluxWeightControl.enabled = starEnabled;
-      dialog.starSaturationWeightControl.enabled = starEnabled;
-      dialog.starRadiusWeightControl.enabled = starEnabled;
-      dialog.starInfluenceRadiusControl.enabled = starEnabled;
-      dialog.starKernelCombo.enabled = starEnabled;
-      dialog.localStarBoostControl.enabled = starEnabled;
-
-      var visibilityEnabled = dialog.parameters.enableRowVisibility;
-      dialog.visibilityModeCombo.enabled = visibilityEnabled;
-      dialog.visibilityRadiusControl.enabled = visibilityEnabled;
-      dialog.visibilityStrengthControl.enabled = visibilityEnabled;
-
-      dialog.confidenceStrengthControl.enabled = dialog.parameters.enableConfidenceWeighting;
-      dialog.protectionStrengthControl.enabled = dialog.parameters.enableProtectionMask;
-
-      var iterationsEnabled = dialog.parameters.enableIterations;
-      dialog.iterationsControl.enabled = iterationsEnabled;
-      dialog.enableConvergenceCheck.enabled = iterationsEnabled;
-      dialog.convergenceMantissaControl.enabled = iterationsEnabled && dialog.parameters.enableConvergence;
-      dialog.convergenceExponentCombo.enabled = iterationsEnabled && dialog.parameters.enableConvergence;
-      dialog.recomputeMasksCheck.enabled = iterationsEnabled;
-      dialog.recomputeInfluenceCheck.enabled = iterationsEnabled;
-
-      var diagnosticsEnabled = dialog.parameters.enableDiagnostics;
-      dialog.outputSoftBackgroundCheck.enabled = diagnosticsEnabled;
-      dialog.outputWorkingCheck.enabled = diagnosticsEnabled;
-      dialog.outputDifferenceCheck.enabled = diagnosticsEnabled;
-      dialog.outputRowBackgroundCheck.enabled = diagnosticsEnabled;
-      dialog.outputRowTrendCheck.enabled = diagnosticsEnabled;
-      dialog.outputRowResidualCheck.enabled = diagnosticsEnabled;
-      dialog.outputRowInfluenceCheck.enabled = diagnosticsEnabled;
-      dialog.outputRowVisibilityCheck.enabled = diagnosticsEnabled;
-      dialog.outputRowConfidenceCheck.enabled = diagnosticsEnabled;
-      dialog.outputRowCorrectionCheck.enabled = diagnosticsEnabled;
+      dialog.enableConvergenceCheck.enabled = dialog.parameters.enableIterations;
+      dialog.convergenceMantissaControl.enabled = dialog.parameters.enableIterations && dialog.parameters.enableConvergence;
+      dialog.convergenceExponentCombo.enabled = dialog.parameters.enableIterations && dialog.parameters.enableConvergence;
+      dialog.iterationsControl.enabled = dialog.parameters.enableIterations;
+      dialog.recomputeMasksCheck.enabled = dialog.parameters.enableIterations;
+      dialog.recomputeInfluenceCheck.enabled = dialog.parameters.enableIterations;
    };
 
    if ( this.parameters.targetViewId.length == 0 )
@@ -601,6 +605,8 @@ function RowBandingCompensationDialog( parameters )
    this.updateControlStates();
    if ( typeof this.adjustToContents == "function" )
       this.adjustToContents();
+   this.childToFocus = this.convergenceMantissaControl.edit;
+   this.convergenceMantissaControl.edit.hasFocus = true;
    rbcSetScaledMinWidth( this, 760 );
 }
 
