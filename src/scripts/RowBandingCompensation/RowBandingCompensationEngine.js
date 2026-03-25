@@ -87,7 +87,7 @@ function RowBandingCompensationEngine( parameters )
                   return model;
                }.bind( this ) );
             rbcLogProgress( format(
-               "Soft background grid: %d x %d cells at %d px.",
+               "Soft background grid: %d x %d nodes at %d px.",
                finalBackgroundModel.gridWidth,
                finalBackgroundModel.gridHeight,
                finalBackgroundModel.cellSize ) );

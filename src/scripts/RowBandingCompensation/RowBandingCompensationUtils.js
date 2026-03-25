@@ -141,12 +141,6 @@ function rbcSmooth1D( values, radius )
    return rbcConvolve1D( values, rbcCreateGaussianKernel1D( radius ) );
 }
 
-function rbcSmoothStep( value )
-{
-   value = rbcClamp( value, 0, 1 );
-   return value * value * (3 - 2 * value);
-}
-
 function rbcNormalizeArray( values )
 {
    if ( values.length == 0 )

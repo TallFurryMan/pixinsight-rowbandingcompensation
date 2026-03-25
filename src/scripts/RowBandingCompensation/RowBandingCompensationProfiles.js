@@ -9,8 +9,8 @@ function RowBandingCompensationBackgroundModel( parameters )
 
    this.build = function( image, exclusionImage )
    {
-      this.gridWidth = Math.max( 1, Math.ceil( image.width / this.cellSize ) );
-      this.gridHeight = Math.max( 1, Math.ceil( image.height / this.cellSize ) );
+      this.gridWidth = Math.max( 2, Math.ceil( (image.width - 1) / this.cellSize ) + 1 );
+      this.gridHeight = Math.max( 2, Math.ceil( (image.height - 1) / this.cellSize ) + 1 );
 
       var gridCount = this.gridWidth * this.gridHeight;
       var sums = new Array( gridCount );
@@ -32,18 +32,32 @@ function RowBandingCompensationBackgroundModel( parameters )
       {
          var imageRow = rbcReadRow( image, y );
          var maskRow = exclusionImage != null ? rbcReadRow( exclusionImage, y ) : null;
-         var gridY = Math.min( this.gridHeight - 1, Math.floor( y / this.cellSize ) );
+         var gy = y / this.cellSize;
+         var y0 = rbcClamp( Math.floor( gy ), 0, this.gridHeight - 1 );
+         var y1 = Math.min( this.gridHeight - 1, y0 + 1 );
+         var fy = y1 > y0 ? gy - y0 : 0;
+         var wy0 = 1 - fy;
+         var wy1 = fy;
 
          for ( var x = 0; x < image.width; x += sampleStep )
          {
             if ( maskRow != null && maskRow[ x ] >= 0.5 )
                continue;
 
-            var gridX = Math.min( this.gridWidth - 1, Math.floor( x / this.cellSize ) );
-            var index = gridY * this.gridWidth + gridX;
-            sums[ index ] += imageRow[ x ];
-            counts[ index ] += 1;
-            sampleSum += imageRow[ x ];
+            var gx = x / this.cellSize;
+            var x0 = rbcClamp( Math.floor( gx ), 0, this.gridWidth - 1 );
+            var x1 = Math.min( this.gridWidth - 1, x0 + 1 );
+            var fx = x1 > x0 ? gx - x0 : 0;
+            var wx0 = 1 - fx;
+            var wx1 = fx;
+            var sampleValue = imageRow[ x ];
+
+            this.accumulateWeightedSample( sums, counts, x0, y0, wx0 * wy0, sampleValue );
+            this.accumulateWeightedSample( sums, counts, x1, y0, wx1 * wy0, sampleValue );
+            this.accumulateWeightedSample( sums, counts, x0, y1, wx0 * wy1, sampleValue );
+            this.accumulateWeightedSample( sums, counts, x1, y1, wx1 * wy1, sampleValue );
+
+            sampleSum += sampleValue;
             sampleCount += 1;
          }
 
@@ -57,6 +71,15 @@ function RowBandingCompensationBackgroundModel( parameters )
 
       this.fillMissingCells();
       this.smoothGrid();
+   };
+
+   this.accumulateWeightedSample = function( sums, counts, x, y, weight, value )
+   {
+      if ( weight <= 0 )
+         return;
+      var index = y * this.gridWidth + x;
+      sums[ index ] += weight * value;
+      counts[ index ] += weight;
    };
 
    this.fillMissingCells = function()
@@ -148,17 +171,15 @@ function RowBandingCompensationBackgroundModel( parameters )
       if ( this.gridValues.length == 0 )
          return 0;
 
-      var gx = x / this.cellSize - 0.5;
-      var gy = y / this.cellSize - 0.5;
+      var gx = rbcClamp( x / this.cellSize, 0, this.gridWidth - 1 );
+      var gy = rbcClamp( y / this.cellSize, 0, this.gridHeight - 1 );
       var x0 = Math.floor( gx );
       var y0 = Math.floor( gy );
       var x1 = Math.min( this.gridWidth - 1, x0 + 1 );
       var y1 = Math.min( this.gridHeight - 1, y0 + 1 );
-      x0 = rbcClamp( x0, 0, this.gridWidth - 1 );
-      y0 = rbcClamp( y0, 0, this.gridHeight - 1 );
 
-      var fx = rbcSmoothStep( gx - x0 );
-      var fy = rbcSmoothStep( gy - y0 );
+      var fx = gx - x0;
+      var fy = gy - y0;
       var v00 = this.gridValues[ y0 * this.gridWidth + x0 ];
       var v10 = this.gridValues[ y0 * this.gridWidth + x1 ];
       var v01 = this.gridValues[ y1 * this.gridWidth + x0 ];
