@@ -205,8 +205,8 @@ var RBC_TOOLTIPS = {
       "<p>This is the primary 1D banding signal and the best place to inspect convergence across iterations.</p>",
 
    outputRowInfluencePlot:
-      "<p>Creates a diagnostic plot view of the normalized star influence profile.</p>" +
-      "<p>Use it to confirm that only the intended star-affected rows receive extra weighting.</p>",
+      "<p>Creates a diagnostic plot view of the normalized star influence profile on a fixed [0,1] scale.</p>" +
+      "<p>Use it to confirm that only the intended star-affected rows receive extra weighting. If no star support image is provided in v1, this plot will be flat zero.</p>",
 
    outputRowVisibilityPlot:
       "<p>Creates a diagnostic plot view of the row visibility or salience profile.</p>" +

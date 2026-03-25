@@ -35,7 +35,7 @@ function RowBandingCompensationEngine( parameters )
          console.warningln( "<end><cbr>Row trend correction is disabled. The process will compute diagnostics but no effective row correction will be generated." );
 
       if ( (this.parameters.enableStarInfluence || this.parameters.enableProtectionMask) && starMaskView == null && starsOnlyView == null )
-         console.warningln( "<end><cbr>No external star support image was provided. Star influence and protection will operate in degraded mode." );
+         console.warningln( "<end><cbr>No external star support image was provided. In v1, star-dependent features are disabled, so rowInfluence will be flat zero and no protection mask will be applied." );
 
       var iterations = this.parameters.enableIterations ? this.parameters.iterations : 1;
       var previousResidual = null;
@@ -71,8 +71,15 @@ function RowBandingCompensationEngine( parameters )
          if ( iteration == 0 || this.parameters.recomputeStarInfluenceEachIteration )
          {
             finalInfluence = starAnalysis.rowInfluence;
-            if ( this.parameters.enableStarInfluence && finalMaskSet.hasMask )
-               console.writeln( "Detected star objects: " + starAnalysis.starObjects.length );
+            if ( this.parameters.enableStarInfluence )
+            {
+               if ( !finalMaskSet.hasMask )
+                  console.writeln( "Row influence profile: flat zero because no star support input is available." );
+               else if ( starAnalysis.usedFallbackProfile )
+                  console.writeln( "Detected star objects: 0; using mask-occupancy fallback influence profile." );
+               else
+                  console.writeln( "Detected star objects: " + starAnalysis.starObjects.length );
+            }
          }
 
          finalBackgroundModel = null;

@@ -23,16 +23,16 @@ function RowBandingCompensationDiagnosticsExporter( parameters )
       if ( this.parameters.outputRowResidualPlot )
          this.publishProfilePlot( targetId, "rowResidual", profileData.rowResidual );
       if ( this.parameters.outputRowInfluencePlot )
-         this.publishProfilePlot( targetId, "rowInfluence", rowInfluence );
+         this.publishProfilePlot( targetId, "rowInfluence", rowInfluence, 0, 1 );
       if ( this.parameters.outputRowVisibilityPlot )
-         this.publishProfilePlot( targetId, "rowVisibility", profileData.rowVisibility );
+         this.publishProfilePlot( targetId, "rowVisibility", profileData.rowVisibility, 0, 1 );
       if ( this.parameters.outputRowConfidencePlot )
-         this.publishProfilePlot( targetId, "rowConfidence", profileData.rowConfidence );
+         this.publishProfilePlot( targetId, "rowConfidence", profileData.rowConfidence, 0, 1 );
       if ( this.parameters.outputRowCorrectionPlot )
          this.publishProfilePlot( targetId, "rowCorrection", profileData.rowCorrection );
    };
 
-   this.publishProfilePlot = function( targetId, suffix, values )
+   this.publishProfilePlot = function( targetId, suffix, values, fixedMinValue, fixedMaxValue )
    {
       var width = 256 * 3;
       var height = Math.max( 64, values.length );
@@ -43,14 +43,19 @@ function RowBandingCompensationDiagnosticsExporter( parameters )
       image.fill( 1 );
       var progress = rbcCreateProgressReporter( "  Writing " + suffix + " plot", values.length, 5 );
 
-      var minValue = values[ 0 ];
-      var maxValue = values[ 0 ];
-      for ( var i = 1; i < values.length; ++i )
+      var minValue = fixedMinValue;
+      var maxValue = fixedMaxValue;
+      if ( minValue == null || maxValue == null )
       {
-         if ( values[ i ] < minValue )
-            minValue = values[ i ];
-         if ( values[ i ] > maxValue )
-            maxValue = values[ i ];
+         minValue = values[ 0 ];
+         maxValue = values[ 0 ];
+         for ( var i = 1; i < values.length; ++i )
+         {
+            if ( values[ i ] < minValue )
+               minValue = values[ i ];
+            if ( values[ i ] > maxValue )
+               maxValue = values[ i ];
+         }
       }
       var valueSpan = maxValue - minValue;
       if ( 1 + valueSpan == 1 )
