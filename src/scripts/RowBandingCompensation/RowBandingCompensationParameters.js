@@ -2,6 +2,9 @@ var RBC_ROW_ESTIMATORS = [ "Median", "TrimmedMean", "WinsorizedMean" ];
 var RBC_VISIBILITY_MODES = [ "HighPassResidual", "FirstDerivative", "SecondDerivative", "LocalMAD" ];
 var RBC_KERNEL_TYPES = [ "Gaussian", "Triangular", "Box" ];
 var RBC_CLIPPING_POLICIES = [ "ClampLow", "Clamp01", "None" ];
+var RBC_CONVERGENCE_EPSILON_MIN = 1.0e-7;
+var RBC_CONVERGENCE_EPSILON_MAX = 1.0e-3;
+var RBC_CONVERGENCE_EXPONENTS = [ -3, -4, -5, -6, -7 ];
 
 var RBC_TOOLTIPS = {
    targetViewId:
@@ -47,6 +50,10 @@ var RBC_TOOLTIPS = {
    enableIterations:
       "<p>Runs several conservative passes instead of one aggressive pass. This is generally safer for weak banding defects.</p>" +
       "<p>More iterations can converge more cleanly, but they also increase runtime and can slowly flatten real signal if parameters are too strong.</p>",
+
+   enableConvergence:
+      "<p>Stops iterative processing early when the row residual no longer changes meaningfully.</p>" +
+      "<p>Disable this if you want the process to always run the full number of configured iterations, regardless of residual change.</p>",
 
    enableDiagnostics:
       "<p>Enables creation of optional diagnostic views. Use this while tuning the process or validating behavior on new datasets.</p>" +
@@ -170,7 +177,7 @@ var RBC_TOOLTIPS = {
 
    convergenceEpsilon:
       "<p>Early-stop threshold based on RMS change in the row residual profile between iterations.</p>" +
-      "<p>Smaller values force more iterations. Larger values stop earlier but may leave some correctable residual behind.</p>",
+      "<p>The value is edited as a mantissa and base-10 exponent, over a bounded range from 1e-7 to 1e-3. Smaller values force more iterations. Larger values stop earlier but may leave some correctable residual behind.</p>",
 
    recomputeMasksEachIteration:
       "<p>Rebuilds internal masks after each pass using the current corrected image state.</p>" +
@@ -241,6 +248,7 @@ function RowBandingCompensationParameters()
       this.enableConfidenceWeighting = true;
       this.enableProtectionMask = true;
       this.enableIterations = true;
+      this.enableConvergence = true;
       this.enableDiagnostics = false;
 
       this.maskThreshold = 0.15;
@@ -343,7 +351,7 @@ function RowBandingCompensationParameters()
          this.clippingPolicy = "ClampLow";
 
       this.iterations = Math.max( 1, Math.round( this.iterations ) );
-      this.convergenceEpsilon = Math.max( 0, this.convergenceEpsilon );
+      this.convergenceEpsilon = rbcClamp( this.convergenceEpsilon, RBC_CONVERGENCE_EPSILON_MIN, RBC_CONVERGENCE_EPSILON_MAX );
    };
 
    this.importParameters = function()
@@ -369,6 +377,8 @@ function RowBandingCompensationParameters()
          this.enableProtectionMask = Parameters.getBoolean( "enableProtectionMask" );
       if ( Parameters.has( "enableIterations" ) )
          this.enableIterations = Parameters.getBoolean( "enableIterations" );
+      if ( Parameters.has( "enableConvergence" ) )
+         this.enableConvergence = Parameters.getBoolean( "enableConvergence" );
       if ( Parameters.has( "enableDiagnostics" ) )
          this.enableDiagnostics = Parameters.getBoolean( "enableDiagnostics" );
 
@@ -483,6 +493,7 @@ function RowBandingCompensationParameters()
       Parameters.set( "enableConfidenceWeighting", this.enableConfidenceWeighting );
       Parameters.set( "enableProtectionMask", this.enableProtectionMask );
       Parameters.set( "enableIterations", this.enableIterations );
+      Parameters.set( "enableConvergence", this.enableConvergence );
       Parameters.set( "enableDiagnostics", this.enableDiagnostics );
 
       Parameters.set( "maskThreshold", this.maskThreshold );

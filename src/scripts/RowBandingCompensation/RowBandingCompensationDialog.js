@@ -108,6 +108,46 @@ function RowBandingCompensationDialog( parameters )
       return combo;
    };
 
+   this.clampConvergenceEpsilon = function( value )
+   {
+      return rbcClamp( value, RBC_CONVERGENCE_EPSILON_MIN, RBC_CONVERGENCE_EPSILON_MAX );
+   };
+
+   this.decomposeConvergenceEpsilon = function( value )
+   {
+      value = dialog.clampConvergenceEpsilon( value );
+      var exponent = 0;
+      var mantissa = value;
+
+      while ( mantissa < 1 && exponent > RBC_CONVERGENCE_EXPONENTS[ RBC_CONVERGENCE_EXPONENTS.length - 1 ] )
+      {
+         mantissa *= 10;
+         --exponent;
+      }
+
+      while ( mantissa >= 10 && exponent < RBC_CONVERGENCE_EXPONENTS[ 0 ] )
+      {
+         mantissa /= 10;
+         ++exponent;
+      }
+
+      if ( RBC_CONVERGENCE_EXPONENTS.indexOf( exponent ) < 0 )
+      {
+         exponent = mantissa >= 1 ? RBC_CONVERGENCE_EXPONENTS[ 0 ] : RBC_CONVERGENCE_EXPONENTS[ RBC_CONVERGENCE_EXPONENTS.length - 1 ];
+         mantissa = value / Math.pow( 10, exponent );
+      }
+
+      mantissa = rbcClamp( mantissa, 1, 9.999 );
+      return { mantissa: mantissa, exponent: exponent };
+   };
+
+   this.syncConvergenceControlsFromParameters = function()
+   {
+      var convergence = dialog.decomposeConvergenceEpsilon( dialog.parameters.convergenceEpsilon );
+      dialog.convergenceMantissaControl.setValue( convergence.mantissa );
+      dialog.convergenceExponentCombo.currentItem = Math.max( 0, RBC_CONVERGENCE_EXPONENTS.indexOf( convergence.exponent ) );
+   };
+
    this.addViewSelector = function( parent, labelText, toolTipKey, required, valueGetter, valueSetter )
    {
       var row = dialog.createLabeledRow( parent, labelText, rbcTooltip( toolTipKey ) );
@@ -294,9 +334,34 @@ function RowBandingCompensationDialog( parameters )
    this.iterationsControl = this.addNumericControl( this.iterationSection.control.sizer, "Number of iterations:", "iterations", 1, 10, 0, 10,
       function() { return dialog.parameters.iterations; },
       function( value ) { dialog.parameters.iterations = Math.round( value ); } );
-   this.convergenceControl = this.addNumericControl( this.iterationSection.control.sizer, "Convergence epsilon:", "convergenceEpsilon", 0, 0.01, 6, 200,
-      function() { return dialog.parameters.convergenceEpsilon; },
-      function( value ) { dialog.parameters.convergenceEpsilon = value; } );
+   this.enableConvergenceCheck = this.addCheckBoxRow( this.iterationSection.control.sizer, "Enable convergence stop:", "enableConvergence",
+      function() { return dialog.parameters.enableConvergence; },
+      function( value ) { dialog.parameters.enableConvergence = value; } );
+   this.convergenceMantissaControl = this.addNumericControl( this.iterationSection.control.sizer, "Convergence mantissa:", "convergenceEpsilon", 1, 9.999, 3, 900,
+      function() { return dialog.decomposeConvergenceEpsilon( dialog.parameters.convergenceEpsilon ).mantissa; },
+      function( value )
+      {
+         var decomposition = dialog.decomposeConvergenceEpsilon( dialog.parameters.convergenceEpsilon );
+         dialog.parameters.convergenceEpsilon = dialog.clampConvergenceEpsilon(
+            rbcClamp( value, 1, 9.999 ) * Math.pow( 10, decomposition.exponent ) );
+         dialog.syncConvergenceControlsFromParameters();
+      } );
+   this.convergenceExponentCombo = this.addComboBoxRow( this.iterationSection.control.sizer, "Convergence exponent:", "convergenceEpsilon",
+      [ "10^-3", "10^-4", "10^-5", "10^-6", "10^-7" ],
+      function()
+      {
+         return format( "10^%d", dialog.decomposeConvergenceEpsilon( dialog.parameters.convergenceEpsilon ).exponent );
+      },
+      function( value )
+      {
+         var exponent = parseInt( value.substr( 3 ), 10 );
+         var mantissa = dialog.decomposeConvergenceEpsilon( dialog.parameters.convergenceEpsilon ).mantissa;
+         if ( isNaN( exponent ) )
+            exponent = -5;
+         dialog.parameters.convergenceEpsilon = dialog.clampConvergenceEpsilon(
+            mantissa * Math.pow( 10, exponent ) );
+         dialog.syncConvergenceControlsFromParameters();
+      } );
    this.recomputeMasksCheck = this.addCheckBoxRow( this.iterationSection.control.sizer, "Recompute masks each iteration:", "recomputeMasksEachIteration",
       function() { return dialog.parameters.recomputeMasksEachIteration; },
       function( value ) { dialog.parameters.recomputeMasksEachIteration = value; } );
@@ -429,6 +494,7 @@ function RowBandingCompensationDialog( parameters )
       dialog.enableConfidenceCheck.checked = dialog.parameters.enableConfidenceWeighting;
       dialog.enableProtectionCheck.checked = dialog.parameters.enableProtectionMask;
       dialog.enableIterationsCheck.checked = dialog.parameters.enableIterations;
+      dialog.enableConvergenceCheck.checked = dialog.parameters.enableConvergence;
       dialog.enableDiagnosticsCheck.checked = dialog.parameters.enableDiagnostics;
 
       dialog.maskThresholdControl.setValue( dialog.parameters.maskThreshold );
@@ -464,7 +530,7 @@ function RowBandingCompensationDialog( parameters )
       dialog.clippingPolicyCombo.currentItem = Math.max( 0, RBC_CLIPPING_POLICIES.indexOf( dialog.parameters.clippingPolicy ) );
 
       dialog.iterationsControl.setValue( dialog.parameters.iterations );
-      dialog.convergenceControl.setValue( dialog.parameters.convergenceEpsilon );
+      dialog.syncConvergenceControlsFromParameters();
       dialog.recomputeMasksCheck.checked = dialog.parameters.recomputeMasksEachIteration;
       dialog.recomputeInfluenceCheck.checked = dialog.parameters.recomputeStarInfluenceEachIteration;
 
@@ -505,7 +571,9 @@ function RowBandingCompensationDialog( parameters )
 
       var iterationsEnabled = dialog.parameters.enableIterations;
       dialog.iterationsControl.enabled = iterationsEnabled;
-      dialog.convergenceControl.enabled = iterationsEnabled;
+      dialog.enableConvergenceCheck.enabled = iterationsEnabled;
+      dialog.convergenceMantissaControl.enabled = iterationsEnabled && dialog.parameters.enableConvergence;
+      dialog.convergenceExponentCombo.enabled = iterationsEnabled && dialog.parameters.enableConvergence;
       dialog.recomputeMasksCheck.enabled = iterationsEnabled;
       dialog.recomputeInfluenceCheck.enabled = iterationsEnabled;
 

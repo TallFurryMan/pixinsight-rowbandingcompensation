@@ -37,6 +37,9 @@ function RowBandingCompensationEngine( parameters )
       if ( (this.parameters.enableStarInfluence || this.parameters.enableProtectionMask) && starMaskView == null && starsOnlyView == null )
          console.warningln( "<end><cbr>No external star support image was provided. In v1, star-dependent features are disabled, so rowInfluence will be flat zero and no protection mask will be applied." );
 
+      if ( this.parameters.enableIterations && !this.parameters.enableConvergence )
+         console.writeln( "Convergence stop: disabled; the full iteration count will be used." );
+
       var iterations = this.parameters.enableIterations ? this.parameters.iterations : 1;
       var previousResidual = null;
       var finalMaskSet = null;
@@ -131,9 +134,10 @@ function RowBandingCompensationEngine( parameters )
          {
             var rmsChange = rbcRmsDifference( previousResidual, finalProfileData.rowResidual );
             console.writeln( format( "Residual RMS change: %.8f", rmsChange ) );
-            converged = rmsChange <= this.parameters.convergenceEpsilon;
+            if ( this.parameters.enableConvergence )
+               converged = rmsChange <= this.parameters.convergenceEpsilon;
          }
-         if ( rbcMaxAbs( finalProfileData.rowCorrection ) <= this.parameters.convergenceEpsilon )
+         if ( this.parameters.enableConvergence && rbcMaxAbs( finalProfileData.rowCorrection ) <= this.parameters.convergenceEpsilon )
             converged = true;
 
          previousResidual = finalProfileData.rowResidual.slice( 0 );
@@ -217,6 +221,9 @@ function RowBandingCompensationEngine( parameters )
       console.writeln( "Stars-only view: " + (starsOnlyView != null ? starsOnlyView.id : "<none>") );
       console.writeln( "Soft background model: " + this.parameters.enableSoftBackgroundModel );
       console.writeln( "Iterations enabled: " + this.parameters.enableIterations );
+      console.writeln( "Convergence stop enabled: " + this.parameters.enableConvergence );
+      if ( this.parameters.enableConvergence )
+         console.writeln( format( "Convergence epsilon: %.8f", this.parameters.convergenceEpsilon ) );
       console.writeln( "Diagnostics enabled: " + this.parameters.enableDiagnostics );
    };
 
