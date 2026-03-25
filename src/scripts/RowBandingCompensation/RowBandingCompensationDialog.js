@@ -7,8 +7,8 @@ function RowBandingCompensationDialog( parameters )
    this.windowTitle = TITLE;
 
    var dialog = this;
-   var labelWidth = this.logicalPixelsToPhysical( 260 );
-   var editWidth = this.logicalPixelsToPhysical( 90 );
+   var labelWidth = 260;
+   var editWidth = 90;
 
    this.helpLabel = new Label( this );
    this.helpLabel.useRichText = true;
