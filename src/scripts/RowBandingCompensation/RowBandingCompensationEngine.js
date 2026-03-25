@@ -1,0 +1,180 @@
+function RowBandingCompensationEngine( parameters )
+{
+   this.parameters = parameters;
+   this.maskBuilder = new RowBandingCompensationMaskBuilder( parameters );
+   this.starAnalyzer = new RowBandingCompensationStarAnalyzer( parameters );
+   this.profileEstimator = new RowBandingCompensationProfileEstimator( parameters );
+   this.correctionApplier = new RowBandingCompensationCorrectionApplier( parameters );
+   this.diagnosticsExporter = new RowBandingCompensationDiagnosticsExporter( parameters );
+
+   this.execute = function( explicitTargetView )
+   {
+      var targetView = this.resolveTargetView( explicitTargetView );
+      this.validateTargetView( targetView );
+
+      this.parameters.targetViewId = targetView.id;
+      this.parameters.ensureValid();
+
+      var starMaskView = rbcFindViewById( this.parameters.starMaskViewId );
+      var starsOnlyView = rbcFindViewById( this.parameters.starsOnlyViewId );
+
+      var originalImage = rbcGrayImageFromView( targetView );
+      var currentImage = rbcCopyImage( originalImage );
+      var targetId = targetView.id;
+
+      this.logExecutionContext( targetView, starMaskView, starsOnlyView );
+      this.warnIfImageLooksNonLinear( originalImage );
+
+      if ( !this.parameters.enableRowTrendCorrection )
+         console.warningln( "<end><cbr>Row trend correction is disabled. The process will compute diagnostics but no effective row correction will be generated." );
+
+      if ( (this.parameters.enableStarInfluence || this.parameters.enableProtectionMask) && starMaskView == null && starsOnlyView == null )
+         console.warningln( "<end><cbr>No external star support image was provided. Star influence and protection will operate in degraded mode." );
+
+      var iterations = this.parameters.enableIterations ? this.parameters.iterations : 1;
+      var previousResidual = null;
+      var finalMaskSet = null;
+      var finalProfileData = null;
+      var finalInfluence = this.profileEstimator.zeroProfile( currentImage.height );
+      var finalBackgroundModel = null;
+
+      for ( var iteration = 0; iteration < iterations; ++iteration )
+      {
+         console.noteln( format( "<end><cbr>Iteration %d/%d", iteration + 1, iterations ) );
+
+         var rebuildMask = finalMaskSet == null || this.parameters.recomputeMasksEachIteration;
+         if ( rebuildMask )
+            finalMaskSet = this.maskBuilder.build( starMaskView, starsOnlyView );
+
+         var starAnalysis = (iteration == 0 || this.parameters.recomputeStarInfluenceEachIteration)
+            ? this.starAnalyzer.analyze( finalMaskSet, currentImage.height )
+            : { starObjects: [], rowInfluence: finalInfluence, usedFallbackProfile: false };
+
+         if ( iteration == 0 || this.parameters.recomputeStarInfluenceEachIteration )
+         {
+            finalInfluence = starAnalysis.rowInfluence;
+            if ( this.parameters.enableStarInfluence && finalMaskSet.hasMask )
+               console.writeln( "Detected star objects: " + starAnalysis.starObjects.length );
+         }
+
+         finalBackgroundModel = null;
+         if ( this.parameters.enableSoftBackgroundModel )
+         {
+            finalBackgroundModel = new RowBandingCompensationBackgroundModel( this.parameters );
+            finalBackgroundModel.build( currentImage, finalMaskSet.hasMask ? finalMaskSet.exclusionImage : null );
+         }
+
+         finalProfileData = this.profileEstimator.estimate(
+            currentImage,
+            finalMaskSet.hasMask ? finalMaskSet.exclusionImage : null,
+            finalBackgroundModel,
+            finalInfluence );
+
+         console.writeln( "Rows with limited support: " + finalProfileData.insufficientRows );
+         console.writeln( format( "Residual RMS: %.8f", this.profileRms( finalProfileData.rowResidual ) ) );
+         console.writeln( format( "Max correction amplitude: %.8f", rbcMaxAbs( finalProfileData.rowCorrection ) ) );
+
+         if ( this.parameters.enableRowTrendCorrection )
+            this.correctionApplier.apply(
+               currentImage,
+               finalProfileData.rowCorrection,
+               this.parameters.enableProtectionMask && finalMaskSet.hasMask ? finalMaskSet.protectionImage : null );
+
+         var converged = false;
+         if ( previousResidual != null )
+         {
+            var rmsChange = rbcRmsDifference( previousResidual, finalProfileData.rowResidual );
+            console.writeln( format( "Residual RMS change: %.8f", rmsChange ) );
+            converged = rmsChange <= this.parameters.convergenceEpsilon;
+         }
+         if ( rbcMaxAbs( finalProfileData.rowCorrection ) <= this.parameters.convergenceEpsilon )
+            converged = true;
+
+         previousResidual = finalProfileData.rowResidual.slice( 0 );
+         if ( converged )
+         {
+            console.noteln( "Convergence criterion reached." );
+            break;
+         }
+      }
+
+      var correctedWindow = rbcWindowFromImage( currentImage, targetId + "_RBC" );
+      correctedWindow.show();
+
+      this.diagnosticsExporter.exportIterationProducts(
+         targetId,
+         currentImage,
+         originalImage,
+         finalBackgroundModel,
+         finalProfileData,
+         finalInfluence );
+
+      return {
+         targetView: targetView,
+         correctedWindow: correctedWindow,
+         profileData: finalProfileData,
+         rowInfluence: finalInfluence,
+         backgroundModel: finalBackgroundModel,
+         maskSet: finalMaskSet
+      };
+   };
+
+   this.resolveTargetView = function( explicitTargetView )
+   {
+      if ( explicitTargetView != null )
+         return explicitTargetView;
+
+      if ( this.parameters.targetViewId.length > 0 )
+      {
+         var target = rbcFindViewById( this.parameters.targetViewId );
+         if ( target != null )
+            return target;
+      }
+
+      var activeWindow = ImageWindow.activeWindow;
+      if ( activeWindow.isNull )
+         throw new Error( "There is no active image window." );
+      return activeWindow.currentView;
+   };
+
+   this.validateTargetView = function( targetView )
+   {
+      if ( targetView == null || !targetView.isView )
+         throw new Error( "A valid target view is required." );
+      if ( targetView.isPreview )
+         throw new Error( TITLE + " does not support previews in version " + VERSION + "." );
+      if ( targetView.image.numberOfChannels != 1 )
+         throw new Error( TITLE + " currently supports monochrome images only. Extract a single channel first." );
+      if ( targetView.image.width < 16 || targetView.image.height < 16 )
+         throw new Error( "The target image is too small for row profile analysis." );
+   };
+
+   this.warnIfImageLooksNonLinear = function( image )
+   {
+      var median = image.median();
+      var maximum = image.maximum();
+      if ( median > 0.12 || (median > 0.05 && maximum > 0.98) )
+         console.warningln( "<end><cbr>The target image appears stretched or non-linear. Results may be unreliable on non-linear data." );
+   };
+
+   this.logExecutionContext = function( targetView, starMaskView, starsOnlyView )
+   {
+      rbcConsoleHeader( TITLE + " " + VERSION );
+      console.writeln( "Target view: " + targetView.id );
+      console.writeln( "Star mask view: " + (starMaskView != null ? starMaskView.id : "<none>") );
+      console.writeln( "Stars-only view: " + (starsOnlyView != null ? starsOnlyView.id : "<none>") );
+      console.writeln( "Soft background model: " + this.parameters.enableSoftBackgroundModel );
+      console.writeln( "Iterations enabled: " + this.parameters.enableIterations );
+      console.writeln( "Diagnostics enabled: " + this.parameters.enableDiagnostics );
+   };
+
+   this.profileRms = function( profile )
+   {
+      if ( profile.length == 0 )
+         return 0;
+      var sum = 0;
+      for ( var i = 0; i < profile.length; ++i )
+         sum += profile[ i ] * profile[ i ];
+      return Math.sqrt( sum / profile.length );
+   };
+}

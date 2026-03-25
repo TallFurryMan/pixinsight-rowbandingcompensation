@@ -1,0 +1,5 @@
+1.0.0
+
+- Initial PJSR implementation of RowBandingCompensation
+- Added process-style dialog with collapsible sections and detailed tooltips
+- Added modular correction engine, diagnostics and resource-package metadata

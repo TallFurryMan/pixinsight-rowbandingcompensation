@@ -1,0 +1,5 @@
+RowBandingCompensation
+
+Conservative row-wise banding compensation for linear monochrome PixInsight subframes.
+
+This package is implemented as a PixInsight JavaScript Runtime resource.
