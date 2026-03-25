@@ -287,7 +287,7 @@ function RowBandingCompensationParameters()
       this.clippingPolicy = "ClampLow";
 
       this.iterations = 30;
-      this.convergenceEpsilon = 0.00005;
+      this.convergenceEpsilon = 0.000005;
       this.recomputeMasksEachIteration = false;
       this.recomputeStarInfluenceEachIteration = false;
 
