@@ -105,8 +105,8 @@ var RBC_TOOLTIPS = {
       "<p>Larger values make the background model coarser and more conservative. Smaller values follow gradients more closely but risk fitting real structure.</p>",
 
    backgroundSmoothingStrength:
-      "<p>Number of smoothing passes applied to the coarse background grid.</p>" +
-      "<p>Higher values keep the model focused on only very broad gradients. Too little smoothing can let the support model track unwanted medium-scale structure.</p>",
+      "<p>Strength of Gaussian smoothing applied to the coarse background grid.</p>" +
+      "<p>Higher values keep the model focused on only very broad gradients. Too little smoothing can leave cell-scale structure in the support model and let it track unwanted medium-scale image content.</p>",
 
    rowEstimatorType:
       "<p>Robust estimator used to measure the background level of each row from unmasked pixels.</p>" +

@@ -109,28 +109,38 @@ function RowBandingCompensationBackgroundModel( parameters )
 
    this.smoothGrid = function()
    {
-      for ( var pass = 0; pass < this.parameters.backgroundSmoothingStrength; ++pass )
+      if ( this.gridValues.length == 0 || this.parameters.backgroundSmoothingStrength <= 0 )
+         return;
+
+      var sigma = Math.max( 0.75, this.parameters.backgroundSmoothingStrength );
+      var radius = Math.max( 1, Math.ceil( 3 * sigma ) );
+      var kernel = rbcCreateGaussianKernel1D( radius, sigma );
+      var horizontallySmoothed = new Array( this.gridValues.length );
+
+      for ( var y = 0; y < this.gridHeight; ++y )
       {
-         var next = new Array( this.gridValues.length );
-         for ( var y = 0; y < this.gridHeight; ++y )
-            for ( var x = 0; x < this.gridWidth; ++x )
-            {
-               var sum = 0;
-               var count = 0;
-               for ( var dy = -1; dy <= 1; ++dy )
-                  for ( var dx = -1; dx <= 1; ++dx )
-                  {
-                     var xx = x + dx;
-                     var yy = y + dy;
-                     if ( xx < 0 || yy < 0 || xx >= this.gridWidth || yy >= this.gridHeight )
-                        continue;
-                     sum += this.gridValues[ yy * this.gridWidth + xx ];
-                     ++count;
-                  }
-               next[ y * this.gridWidth + x ] = count > 0 ? sum / count : this.globalLevel;
-            }
-         this.gridValues = next;
+         var row = new Array( this.gridWidth );
+         for ( var x = 0; x < this.gridWidth; ++x )
+            row[ x ] = this.gridValues[ y * this.gridWidth + x ];
+
+         row = rbcConvolve1D( row, kernel );
+         for ( var xx = 0; xx < this.gridWidth; ++xx )
+            horizontallySmoothed[ y * this.gridWidth + xx ] = row[ xx ];
       }
+
+      var verticallySmoothed = new Array( this.gridValues.length );
+      for ( var x0 = 0; x0 < this.gridWidth; ++x0 )
+      {
+         var column = new Array( this.gridHeight );
+         for ( var y0 = 0; y0 < this.gridHeight; ++y0 )
+            column[ y0 ] = horizontallySmoothed[ y0 * this.gridWidth + x0 ];
+
+         column = rbcConvolve1D( column, kernel );
+         for ( var yy = 0; yy < this.gridHeight; ++yy )
+            verticallySmoothed[ yy * this.gridWidth + x0 ] = column[ yy ];
+      }
+
+      this.gridValues = verticallySmoothed;
    };
 
    this.valueAt = function( x, y )
@@ -138,8 +148,8 @@ function RowBandingCompensationBackgroundModel( parameters )
       if ( this.gridValues.length == 0 )
          return 0;
 
-      var gx = x / this.cellSize;
-      var gy = y / this.cellSize;
+      var gx = x / this.cellSize - 0.5;
+      var gy = y / this.cellSize - 0.5;
       var x0 = Math.floor( gx );
       var y0 = Math.floor( gy );
       var x1 = Math.min( this.gridWidth - 1, x0 + 1 );
@@ -147,8 +157,8 @@ function RowBandingCompensationBackgroundModel( parameters )
       x0 = rbcClamp( x0, 0, this.gridWidth - 1 );
       y0 = rbcClamp( y0, 0, this.gridHeight - 1 );
 
-      var fx = gx - x0;
-      var fy = gy - y0;
+      var fx = rbcSmoothStep( gx - x0 );
+      var fy = rbcSmoothStep( gy - y0 );
       var v00 = this.gridValues[ y0 * this.gridWidth + x0 ];
       var v10 = this.gridValues[ y0 * this.gridWidth + x1 ];
       var v01 = this.gridValues[ y1 * this.gridWidth + x0 ];

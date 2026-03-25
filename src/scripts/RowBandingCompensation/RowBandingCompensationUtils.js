@@ -92,13 +92,13 @@ function rbcEstimateRobustLocation( values, estimatorType, lowRejectQuantile, hi
    return rbcMean( winsorized );
 }
 
-function rbcCreateGaussianKernel1D( radius )
+function rbcCreateGaussianKernel1D( radius, sigma )
 {
    radius = Math.max( 0, Math.round( radius ) );
    if ( radius == 0 )
       return [ 1 ];
 
-   var sigma = Math.max( 0.5, radius / 2 );
+   sigma = sigma != null ? Math.max( 0.5, sigma ) : Math.max( 0.5, radius / 2 );
    var size = radius * 2 + 1;
    var kernel = new Array( size );
    var sum = 0;
@@ -139,6 +139,12 @@ function rbcSmooth1D( values, radius )
    if ( values.length == 0 || radius <= 0 )
       return values.slice( 0 );
    return rbcConvolve1D( values, rbcCreateGaussianKernel1D( radius ) );
+}
+
+function rbcSmoothStep( value )
+{
+   value = rbcClamp( value, 0, 1 );
+   return value * value * (3 - 2 * value);
 }
 
 function rbcNormalizeArray( values )
