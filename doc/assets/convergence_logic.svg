@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1040 820" width="1040" height="820">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,5 L0,10 z" fill="#334155"/>
+    </marker>
+    <style>
+      .title { font: 700 22px Helvetica, Arial, sans-serif; fill: #0f172a; }
+      .box { fill: #f8fafc; stroke: #334155; stroke-width: 1.6; rx: 6; ry: 6; }
+      .line { stroke: #334155; stroke-width: 2.2; fill: none; marker-end: url(#arrow); }
+      .loop { stroke: #64748b; stroke-width: 2; fill: none; stroke-dasharray: 7 6; marker-end: url(#arrow); }
+      .label { font: 600 14px Helvetica, Arial, sans-serif; fill: #0f172a; text-anchor: middle; }
+      .sub { font: 12px Helvetica, Arial, sans-serif; fill: #475569; text-anchor: middle; }
+      .tag { font: 12px Helvetica, Arial, sans-serif; fill: #64748b; text-anchor: middle; }
+    </style>
+  </defs>
+
+  <text class="title" x="48" y="42">Iteration Control</text>
+  <line x1="48" y1="58" x2="992" y2="58" stroke="#cbd5e1" stroke-width="2"/>
+
+  <rect class="box" x="280" y="102" width="360" height="72"/>
+  <text class="label" x="460" y="130">Iteration k</text>
+  <text class="sub" x="460" y="152">compute R_RES, metrics, and C[y]</text>
+
+  <rect class="box" x="280" y="230" width="360" height="72"/>
+  <text class="label" x="460" y="258">Divergence Guard</text>
+  <text class="sub" x="460" y="280">three consecutive RMS increases</text>
+
+  <rect class="box" x="280" y="358" width="360" height="72"/>
+  <text class="label" x="460" y="386">Epsilon Floor</text>
+  <text class="sub" x="460" y="408">1e−9 suppresses early stop</text>
+
+  <rect class="box" x="280" y="486" width="360" height="72"/>
+  <text class="label" x="460" y="514">Convergence Test</text>
+  <text class="sub" x="460" y="536">RMS delta and residual amplitude</text>
+
+  <rect class="box" x="280" y="614" width="360" height="72"/>
+  <text class="label" x="460" y="642">Advance</text>
+  <text class="sub" x="460" y="664">apply C[y] and increment k</text>
+
+  <rect class="box" x="742" y="422" width="190" height="72"/>
+  <text class="label" x="837" y="450">Stop</text>
+  <text class="sub" x="837" y="472">divergence, convergence, or limit</text>
+
+  <path class="line" d="M460 174 V230"/>
+  <path class="line" d="M460 302 V358"/>
+  <path class="line" d="M460 430 V486"/>
+  <path class="line" d="M460 558 V614"/>
+
+  <path class="line" d="M640 266 H742 V458"/>
+  <path class="line" d="M640 522 H742"/>
+  <path class="line" d="M640 394 H710 V650 H640"/>
+  <path class="loop" d="M460 686 V748 H222 V138 H280"/>
+
+  <text class="tag" x="686" y="252">yes</text>
+  <text class="tag" x="492" y="344">no</text>
+  <text class="tag" x="676" y="382">yes</text>
+  <text class="tag" x="682" y="508">yes</text>
+  <text class="tag" x="492" y="472">no</text>
+  <text class="tag" x="490" y="736">next iteration</text>
+</svg>
