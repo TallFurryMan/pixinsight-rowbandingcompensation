@@ -43,6 +43,8 @@ The implementation lives in:
 
 Install the repository as a PixInsight resource repository, then run the script from its feature entry.
 
+Additional workflow documentation is available under [`doc/`](doc/README.md).
+
 Recommended input:
 
 - Linear monochrome subframes
@@ -65,7 +67,9 @@ If registration or stacking leaves the row defect slightly tilted, do not expect
 
 To inspect the actual PJSR widget methods available on your PixInsight build, run:
 
-`run --execute-mode=auto "/Users/tallfurryman/Documents/Sources/pixinsight-rowbandingcompensation/src/scripts/PJSRCompatibilityProbe/PJSRCompatibilityProbe.js"`
+`/Users/tallfurryman/Documents/Sources/pixinsight-rowbandingcompensation/src/scripts/PJSRCompatibilityProbe/PJSRCompatibilityProbe.js`
+
+Run it from the PixInsight Script Editor or from the application command line with the script-running syntax supported by your installed PixInsight build.
 
 The script prints a console report for `Dialog`, `Control`, `ToolButton`, `PushButton`, `ViewList`, `NumericControl`, `SectionBar`, `Label`, and `ComboBox`.
 

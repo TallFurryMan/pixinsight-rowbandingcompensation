@@ -2,13 +2,13 @@
 
 ## Objective
 
-Implement a PixInsight JavaScript Runtime (PJSR) process module named RowBandingCompensation designed to reduce horizontal row-wise banding in linear, calibrated, monochrome astrophotography subframes, before registration and integration.
+Implement a PixInsight JavaScript Runtime (PJSR) script package named RowBandingCompensation designed to reduce horizontal row-wise banding in linear, calibrated, monochrome astrophotography subframes, before registration and integration.
 
 This v1 specification remains limited to defects that are still visually horizontal in image coordinates. Slight post-stacking row tilt is intentionally deferred.
 
 The target defect is a row-level background depression or offset that appears to be correlated with bright stars and/or row readout behavior. The correction must be conservative, diagnostic-friendly, and modular, so that each sub-adjustment can be enabled or disabled independently for experimentation and debugging.
 
-The process must be available from the Process menu and expose a user interface with detailed tooltips for all parameters.
+The current v1 implementation is distributed as a PixInsight script resource with process-instance export support. A future native process implementation may reuse the same workflow and documentation structure.
 
 ## Scope and intended use
 
@@ -41,7 +41,7 @@ The process computes a robust row background profile, optionally stabilized by a
 - visual prominence / row residual salience,
 - confidence in the row background estimate.
 
-The final correction is applied additively per row to the original image, optionally protected by a star/structure protection mask.
+The final correction is applied additively per row to the current corrected image state, optionally protected by a star/structure protection mask.
 
 ## Functional requirements
 
@@ -58,26 +58,22 @@ The module shall:
 9. Build a row influence model from bright stars.
 10. Build a row visibility / salience model from the row residual.
 11. Combine all enabled components into a final row correction vector.
-12. Apply the correction additively to the original image.
+12. Apply the correction additively to the current corrected image state.
 13. Support multiple iterations with convergence criteria.
 14. Expose intermediate products for diagnostics.
 15. Allow enabling/disabling each major adjustment block.
 
-## Process name and UI placement
+## Script identity and UI placement
 
-### Process identifier
+### Feature identifier
 RowBandingCompensation
 
 ### Menu placement
-Expose the process in the PixInsight Process menu under a suitable category, for example:
+Expose the current script through its `#feature-id` entry:
 
-- Process > IntensityTransformations
-or
-- Process > NoiseReduction
-or
-- Process > Utilities
+- Utilities > RowBandingCompensation
 
-Final placement can be adjusted later.
+Future native process-menu placement can be defined later if the implementation is migrated from PJSR to a compiled module.
 
 ## Required UI sections
 
@@ -85,49 +81,60 @@ The interface should be organized into collapsible groups.
 
 ### Input
 - Target image
-- Optional star mask view
 - Optional stars-only view
-### Global enable flags
-- Enable soft 2D background preconditioning
-- Enable row trend correction
-- Enable star influence modulation
-- Enable row visibility modulation
-- Enable confidence modulation
-- Enable protection mask during application
-- Enable iterative processing
-- Enable diagnostic outputs
+- Optional star mask view
+### Iteration Control
+- Enable iterative processing from the section title
+- Enable convergence stop
+- Convergence mantissa
+- Convergence exponent
+- Maximum number of iterations
+- Recompute masks each iteration
+- Recompute star influence each iteration
 ### Star mask and object analysis
+- The section itself is not globally enable-able
+- Mask threshold
 - Star mask dilation radius
 - Star mask blur radius
 - Minimum star area
 - Brightness threshold
 - Saturation threshold
-- Star influence radius in rows
 ### Background estimation
+- Enable soft 2D background model from the section title
 - Row estimator type
 - High rejection quantile
 - Low rejection quantile
 - Minimum valid pixels per row
-- Enable soft 2D background model
 - Soft background sampling scale
 - Soft background smoothing strength
-### Row trend and visibility
+### Row model
+- Enable row trend correction from the section title
 - Row trend smoothing radius
+- Global correction strength
+- Maximum per-iteration correction
+- Additive correction clipping policy
+### Star influence modulation
+- Enable star influence modulation from the section title
+- Star peak weight
+- Star flux weight
+- Star saturation weight
+- Star radius weight
+- Star influence radius in rows
+- Influence kernel
+- Local star-weighted boost
+### Protection mask
+- Enable protection during application from the section title
+- Protection strength
+### Visibility modulation
+- Enable row visibility modulation from the section title
 - Visibility estimator mode
 - Visibility smoothing radius
 - Visibility strength
-### Correction model
-- Global correction strength
-- Local star-weighted boost
+### Confidence modulation
+- Enable confidence weighting from the section title
 - Confidence weighting strength
-- Maximum per-iteration correction
-- Additive correction clipping policy
-### Iteration control
-- Number of iterations
-- Convergence epsilon
-- Recompute masks each iteration
-- Recompute star influence each iteration
 ### Diagnostics
+- Enable diagnostics from the section title
 - Output row background plot
 - Output row trend plot
 - Output row residual plot
@@ -151,13 +158,14 @@ The interface should be organized into collapsible groups.
   - The image should not be geometrically transformed relative to sensor rows
   - Slight post-stacking row tilt is not supported in v1; if the banding is no longer horizontal, correction may be unreliable
 
-If these constraints are violated, the process should issue a warning but still allow execution unless the user explicitly disables permissive mode.
+The current implementation warns when the target appears stretched or non-linear, but rejects unsupported targets such as previews, color images, and very small images.
 
 ### Internal data products
 
 The process should produce the following internal arrays and images:
 
 - originalImage
+- currentImage
 - workingImage
 - softBackgroundModel
 - exclusionMask
@@ -182,8 +190,9 @@ Prepare masks suitable for:
 - protecting stars during correction application,
 - extracting a row influence signal from star positions and intensities.
 #### Inputs
-- Prefer external starMaskView
-- If unavailable, use starsOnlyView if possible to derive a mask
+- If both `starMaskView` and `starsOnlyView` are provided, use the star mask to build exclusion and protection masks, and use the stars-only image for star analysis
+- If only `starsOnlyView` is provided, derive both masks from it and also use it as the star-analysis image
+- If only `starMaskView` is provided, use it both as the mask source and as the star-analysis image
 - If neither is available in v1, execution may continue in degraded mode with star-related features disabled
 #### Steps
 - Normalize the mask to [0,1]
@@ -243,15 +252,15 @@ Estimate a very low-frequency 2D background surface in order to reduce the impac
 This model is used for estimation support only. It must not replace the original image by default.
 
 #### Steps
-- Use originalImage
+- Use the current working image for the iteration
 - Exclude star pixels using exclusionMask
-- Estimate a very smooth 2D background surface:
-  - low-resolution sampling grid
-  - strong smoothing
-  - no attempt to model fine details
+- Accumulate samples onto a coarse node lattice with bilinear weights
+- Fill missing nodes from neighboring nodes
+- Apply separable Gaussian smoothing on the lattice
+- Reconstruct the support surface by bilinear interpolation from the smoothed lattice
 #### Create:
 - softBackgroundModel
-- workingImage = originalImage - softBackgroundModel
+- workingImage = currentImage - softBackgroundModel
 #### Requirements
 - The surface must capture only large-scale gradients
 - The surface must not attempt to fit row banding
@@ -271,8 +280,8 @@ Allow displaying softBackgroundModel and workingImage.
 Estimate the background level of each row excluding stars and other masked pixels.
 
 #### Source image
-- workingImage if soft background preconditioning is enabled
-- otherwise originalImage
+- currentImage - softBackgroundModel if soft background preconditioning is enabled
+- otherwise currentImage
 
 #### For each row y
 - Collect all pixels not masked by exclusionMask
@@ -297,10 +306,14 @@ Estimate the background level of each row excluding stars and other masked pixel
 
 #### Special handling
 
-If a row has too few valid pixels:
+If a row has no valid pixels:
 
-- interpolate from neighboring rows, or
-- mark low confidence
+- interpolate from neighboring rows
+
+If a row has some valid pixels but remains below `minimumValidPixelsPerRow`:
+
+- keep the direct robust estimate
+- mark the row as low-confidence instead of forcing interpolation
 
 ### Row trend estimation
 #### Objective
@@ -320,11 +333,8 @@ rowBackground[]
 
 - rowTrend[]
 
-#### Suitable methods
-- moving average
-- Gaussian smoothing
-- Savitzky-Golay
-- robust local polynomial smoothing
+#### Current implementation
+- 1D Gaussian smoothing
 
 #### Parameter
 - rowTrendSmoothingRadius
@@ -355,11 +365,15 @@ Identify rows more likely to exhibit star-triggered banding.
 
 #### Steps
 
-For each star object:
+For each detected star object:
 
-1. Read its centroid row y0
-2. Compute an influence amplitude from its starScore
+1. Read its centroid row `y0`
+2. Compute an influence amplitude from the weighted combination of peak, flux, saturation ratio and effective radius
 3. Spread this influence across neighboring rows using a vertical kernel
+
+If no stars survive catalog filtering but a support image exists:
+
+- build a fallback row-influence profile from row-wise mean protection-mask occupancy
 
 #### Suggested kernels
 - Gaussian
@@ -466,12 +480,10 @@ If enabled:
 - visibility modulation
 - confidence modulation
 
-Conceptually:
-- rowCorrection[y] *= (1 + localStarBoost * rowInfluence[y])
-- rowCorrection[y] *= (1 + visibilityStrength * rowVisibility[y])
-- rowCorrection[y] *= confidenceFactor(rowConfidence[y], confidenceStrength)
-
-Where confidenceFactor() should reduce correction when confidence is low.
+In the current implementation:
+- rowCorrection[y] *= (1 + localStarBoost * rowInfluence[y]) when star influence is enabled
+- rowCorrection[y] *= (1 + visibilityStrength * rowVisibility[y]) when visibility modulation is enabled
+- rowCorrection[y] *= max( 0, 1 - confidenceStrength * (1 - rowConfidence[y]) ) when confidence weighting is enabled
 
 #### Constraints
 - Cap per-iteration correction amplitude
@@ -487,11 +499,11 @@ Where confidenceFactor() should reduce correction when confidence is low.
 ### Correction application
 #### Objective
 
-Apply the row correction additively to the original image.
+Apply the row correction additively to the current corrected image state.
 
 #### Important rule
 
-Apply to originalImage, not permanently to workingImage.
+Apply each iteration to the current corrected image state, not to the soft-background-subtracted support image.
 
 #### Formula
 
@@ -501,7 +513,7 @@ For each pixel (x, y):
 - attenuate correction in protected regions
 
 Conceptually:
-- corrected(x,y) = original(x,y) - rowCorrection[y] * applyWeight(x,y)
+- corrected_k+1(x,y) = corrected_k(x,y) - rowCorrection_k[y] * applyWeight(x,y)
 
 Where:
 
@@ -532,21 +544,33 @@ Allow multiple conservative passes instead of a single aggressive pass.
 
 For i = 1..N:
 
-- build or update workingImage
+- build or update star-support masks as needed
+- build or update the star-influence profile as needed
+- build the optional soft background model
 - compute row background
 - compute row trend
 - compute row residual
 - compute enabled modulation signals
 - compute row correction
-- apply correction
-- evaluate convergence
+- apply correction to the current corrected image
+- evaluate convergence and divergence guards
 
 #### Convergence criteria
 
 Stop early if:
 
-- RMS change in rowResidual is below convergenceEpsilon
-- or max correction amplitude falls below threshold
+- RMS change in `rowResidual` is below `convergenceEpsilon` and the residual `|95%|` amplitude is also below `convergenceEpsilon`
+- or max correction amplitude is below `convergenceEpsilon` and the residual `|95%|` amplitude is also below `convergenceEpsilon`
+
+If `convergenceEpsilon` is set to the current floor (`1e-9` in the 32-bit working-image path):
+
+- suppress early-stop convergence entirely
+- use the iteration limit instead
+
+If residual RMS increases for three consecutive iterations:
+
+- stop early to avoid divergence
+- warn the user to reduce global correction strength and/or maximum per-iteration correction
 
 #### Parameters
 - enableIterations
@@ -557,7 +581,7 @@ Stop early if:
 
 #### Recommended default
 
-2 to 4 iterations.
+30 iterations with convergence enabled.
 
 ## Debugging and diagnostics
 
@@ -574,9 +598,8 @@ The process must support optional creation of diagnostic outputs.
 
 ### Diagnostic image outputs
 - softBackgroundModel
-- workingImage
+- workingImage = currentImage - softBackgroundModel
 - differenceImage = correctedImage - originalImage
-- optional row correction image visualization
 
 ### Requirement
 
@@ -690,8 +713,8 @@ These are conservative defaults for v1:
 - brightnessThreshold = 0.2
 - saturationThreshold = 0.9
 - starInfluenceRadius = 2
-- backgroundSamplingScale = large
-- backgroundSmoothingStrength = high
+- backgroundSamplingScale = 128
+- backgroundSmoothingStrength = 4
 - rowEstimatorType = TrimmedMean
 - lowRejectQuantile = 0.05
 - highRejectQuantile = 0.10
@@ -704,29 +727,35 @@ These are conservative defaults for v1:
 - globalStrength = 1.0
 - localStarBoost = 0.5
 - protectionStrength = 0.75
-- maximumPerIterationCorrection = conservative internal default
-- iterations = 3
-- convergenceEpsilon = small conservative default
+- maximumPerIterationCorrection = 0.02
+- iterations = 30
+- convergenceEpsilon = 5e-6
 
 ## Failure handling
 
 The module must fail gracefully.
 
-If no star mask is provided
+If no star support image is provided
 - allow execution
 - disable star-dependent features
 - emit warning
 
+If the detected star catalog is empty but a support image exists
+- fall back to a row-occupancy influence profile
+- emit an informational message
+
 If too many rows have insufficient valid pixels
 - warn user
 - reduce confidence
-- optionally abort if configured
 
 If the image appears non-linear or stretched
 - warn user that results may be unreliable
 
 If image is color
-- v1 may reject execution or require extracting a single channel first
+- reject execution in v1; extract a single channel first
+
+If target is a preview
+- reject execution in v1
 
 ## Suggested implementation structure
 
@@ -750,27 +779,27 @@ Stores process parameters and defaults.
 
 Main orchestration of execution pipeline.
 
-#### MaskBuilder
+#### RowBandingCompensationMaskBuilder
 
 Creates exclusion and protection masks.
 
-#### StarAnalyzer
+#### RowBandingCompensationStarAnalyzer
 
 Builds star object catalog and row influence vector.
 
-#### BackgroundModeler
+#### RowBandingCompensationBackgroundModel
 
 Builds soft 2D background support model.
 
-#### RowProfileEstimator
+#### RowBandingCompensationProfileEstimator
 
 Builds row background, trend, residual, visibility, confidence.
 
-#### CorrectionApplier
+#### RowBandingCompensationCorrectionApplier
 
 Applies additive row correction.
 
-#### DiagnosticsExporter
+#### RowBandingCompensationDiagnosticsExporter
 
 Creates plots and diagnostic images.
 
@@ -779,20 +808,20 @@ Creates plots and diagnostic images.
 2. Read parameters
 3. Load optional star mask / stars-only inputs
 4. Build exclusion and protection masks
-5. Extract star objects if enabled
-6. Initialize current image
+5. Extract star objects or fallback row occupancy if enabled
+6. Initialize current image from the original image
 7. For each iteration:
+  - rebuild masks if configured
+  - recompute star influence if configured
   - build optional soft background model
-  - derive working image
   - estimate row background
   - estimate row trend
   - compute residual
-  - compute star influence
   - compute visibility
   - compute confidence
   - compute final row correction
   - apply correction
-  - test convergence
+  - test convergence and divergence guards
 8. Publish corrected image
 9. Publish diagnostics if requested
 
@@ -813,7 +842,7 @@ The implementation should be tested on real calibrated subframes exhibiting hori
 - reduced row banding visibility
 - minimal deformation of stellar cores and halos
 - minimal flattening of real astrophysical structures
-- stable behavior across 2–4 iterations
+- stable behavior across extended iterative runs up to the configured iteration limit
 ### Required comparison outputs
 - before / after
 - difference image
@@ -848,7 +877,7 @@ Reasons:
 
 The implementation agent must:
 
-- implement this as a PJSR PixInsight process
+- implement this as a PJSR PixInsight script package with process-instance export support
 - expose it through a process dialog
 - provide detailed tooltips for every UI control
 - keep the code modular and readable

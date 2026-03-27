@@ -183,12 +183,12 @@ var RBC_TOOLTIPS = {
       "<p>On the current 32-bit working-image path, selecting the minimum floor intentionally suppresses early convergence and lets the maximum iteration count govern termination.</p>",
 
    recomputeMasksEachIteration:
-      "<p>Rebuilds internal masks after each pass using the current corrected image state.</p>" +
-      "<p>This can help if star support changes significantly during correction, but it increases runtime and may introduce iteration-to-iteration variability.</p>",
+      "<p>Rebuilds the internal exclusion and protection masks from the selected external star-support inputs after each pass.</p>" +
+      "<p>This normally produces the same result on every iteration unless the support views themselves have changed. Enable it only for experimentation or future workflows with changing support images.</p>",
 
    recomputeStarInfluenceEachIteration:
       "<p>Recomputes the star catalog and row influence after each pass.</p>" +
-      "<p>Normally unnecessary when the external mask is stable. Enable it for experimentation or when the stars-only input changes meaningfully after correction.</p>",
+      "<p>Normally unnecessary when the external support images are static. Enable it mainly for experimentation, or for workflows where the selected support view is regenerated between executions.</p>",
 
    outputSoftBackgroundModel:
       "<p>Creates a diagnostic view of the soft internal 2D background model from the last iteration.</p>" +
