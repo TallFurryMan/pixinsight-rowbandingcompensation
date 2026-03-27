@@ -28,8 +28,8 @@
     { "d": "M482 128 H536", "class": "line" },
     { "d": "M726 128 H780", "class": "line" },
     { "d": "M970 128 H1024", "class": "line" },
-    { "d": "M238 284 H292", "class": "line" },
-    { "d": "M482 284 H536", "class": "line" },
+    { "d": "M238 276 H536", "class": "line" },
+    { "d": "M482 292 H536", "class": "line" },
     { "d": "M726 284 H780", "class": "line" },
     { "d": "M970 284 H1024", "class": "line" },
     { "d": "M1149 160 V404 H555 V462", "class": "line" },
@@ -37,9 +37,9 @@
     { "d": "M680 498 H734", "class": "line" },
     { "d": "M859 534 V626", "class": "line" },
     { "d": "M680 658 H734", "class": "line" },
-    { "d": "M734 462 H398 V196 H292", "class": "loop" }
+    { "d": "M859 462 V196 H387 V160", "class": "loop" }
   ],
   "texts": [
-    { "x": 470, "y": 436, "text": "iterative update of I_CUR", "class": "note", "anchor": "middle" }
+    { "x": 598, "y": 214, "text": "iterative update of I_CUR", "class": "note", "anchor": "middle" }
   ]
 }
