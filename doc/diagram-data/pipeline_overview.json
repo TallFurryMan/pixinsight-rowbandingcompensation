@@ -1,0 +1,45 @@
+{
+  "width": 1360,
+  "height": 760,
+  "title": "Workflow Overview",
+  "titleX": 48,
+  "titleY": 42,
+  "separatorY": 58,
+  "separatorX1": 48,
+  "separatorX2": 1312,
+  "nodes": [
+    { "x": 48, "y": 96, "w": 190, "h": 64, "title": "Target Image", "subtitle": "I_ORIG" },
+    { "x": 292, "y": 96, "w": 190, "h": 64, "title": "Current Image", "subtitle": "I_CUR" },
+    { "x": 536, "y": 96, "w": 190, "h": 64, "title": "Soft Background", "subtitle": "B_SOFT" },
+    { "x": 780, "y": 96, "w": 190, "h": 64, "title": "Working Support", "subtitle": "I_WORK" },
+    { "x": 1024, "y": 96, "w": 250, "h": 64, "title": "Row Model", "subtitle": "R_BG, R_TR, R_RES, R_VIS, R_CONF" },
+    { "x": 48, "y": 252, "w": 190, "h": 64, "title": "Star Mask", "subtitle": "optional mask support" },
+    { "x": 292, "y": 252, "w": 190, "h": 64, "title": "Stars Only", "subtitle": "optional analysis support" },
+    { "x": 536, "y": 252, "w": 190, "h": 64, "title": "Mask Builder", "subtitle": "M_EXCL and M_PROT" },
+    { "x": 780, "y": 252, "w": 190, "h": 64, "title": "Star Analysis", "subtitle": "catalog or occupancy fallback" },
+    { "x": 1024, "y": 252, "w": 250, "h": 64, "title": "Support Terms", "subtitle": "R_INF and M_PROT" },
+    { "x": 430, "y": 462, "w": 250, "h": 72, "title": "Correction Model", "subtitle": "global scale, visibility, confidence" },
+    { "x": 734, "y": 462, "w": 250, "h": 72, "title": "Apply and Update", "subtitle": "I_CUR ← I_CUR − C[y] · W_PROT" },
+    { "x": 430, "y": 626, "w": 250, "h": 64, "title": "Corrected Output", "subtitle": "TARGET_RBC" },
+    { "x": 734, "y": 626, "w": 250, "h": 64, "title": "Diagnostics", "subtitle": "profiles, support images, difference" }
+  ],
+  "paths": [
+    { "d": "M238 128 H292", "class": "line" },
+    { "d": "M482 128 H536", "class": "line" },
+    { "d": "M726 128 H780", "class": "line" },
+    { "d": "M970 128 H1024", "class": "line" },
+    { "d": "M238 284 H292", "class": "line" },
+    { "d": "M482 284 H536", "class": "line" },
+    { "d": "M726 284 H780", "class": "line" },
+    { "d": "M970 284 H1024", "class": "line" },
+    { "d": "M1149 160 V404 H555 V462", "class": "line" },
+    { "d": "M1149 316 V404 H555 V462", "class": "line" },
+    { "d": "M680 498 H734", "class": "line" },
+    { "d": "M859 534 V626", "class": "line" },
+    { "d": "M680 658 H734", "class": "line" },
+    { "d": "M734 462 H398 V196 H292", "class": "loop" }
+  ],
+  "texts": [
+    { "x": 470, "y": 436, "text": "iterative update of I_CUR", "class": "note", "anchor": "middle" }
+  ]
+}

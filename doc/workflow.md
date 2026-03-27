@@ -27,38 +27,9 @@ This document describes the implemented v1 workflow of `RowBandingCompensation` 
 
 <!--
 D3 source:
-const nodes = [
-  { id: "orig", x: 48, y: 96, w: 190, h: 64, title: "Target Image", subtitle: "I_ORIG" },
-  { id: "cur", x: 292, y: 96, w: 190, h: 64, title: "Current Image", subtitle: "I_CUR" },
-  { id: "bg", x: 536, y: 96, w: 190, h: 64, title: "Soft Background", subtitle: "B_SOFT" },
-  { id: "work", x: 780, y: 96, w: 190, h: 64, title: "Working Support", subtitle: "I_WORK" },
-  { id: "row", x: 1024, y: 96, w: 250, h: 64, title: "Row Model", subtitle: "R_BG, R_TR, R_RES, R_VIS, R_CONF" },
-  { id: "mask", x: 48, y: 252, w: 190, h: 64, title: "Star Mask", subtitle: "optional mask support" },
-  { id: "stars", x: 292, y: 252, w: 190, h: 64, title: "Stars Only", subtitle: "optional analysis support" },
-  { id: "builder", x: 536, y: 252, w: 190, h: 64, title: "Mask Builder", subtitle: "M_EXCL and M_PROT" },
-  { id: "analysis", x: 780, y: 252, w: 190, h: 64, title: "Star Analysis", subtitle: "catalog or occupancy fallback" },
-  { id: "support", x: 1024, y: 252, w: 250, h: 64, title: "Support Terms", subtitle: "R_INF and M_PROT" },
-  { id: "corr", x: 430, y: 462, w: 250, h: 72, title: "Correction Model", subtitle: "global scale, visibility, confidence" },
-  { id: "apply", x: 734, y: 462, w: 250, h: 72, title: "Apply and Update", subtitle: "I_CUR ← I_CUR − C[y] · W_PROT" },
-  { id: "out", x: 430, y: 626, w: 250, h: 64, title: "Corrected Output", subtitle: "TARGET_RBC" },
-  { id: "diag", x: 734, y: 626, w: 250, h: 64, title: "Diagnostics", subtitle: "profiles, support images, difference" }
-];
-const links = [
-  ["orig", "cur"],
-  ["cur", "bg"],
-  ["bg", "work"],
-  ["work", "row"],
-  ["mask", "builder"],
-  ["stars", "builder"],
-  ["builder", "analysis"],
-  ["analysis", "support"],
-  ["row", "corr"],
-  ["support", "corr"],
-  ["corr", "apply"],
-  ["apply", "diag"],
-  ["out", "diag"]
-];
-const svg = d3.create("svg").attr("viewBox", "0 0 1360 760");
+const data = await d3.json("./diagram-data/pipeline_overview.json");
+const svg = d3.create("svg").attr("viewBox", `0 0 ${data.width} ${data.height}`);
+renderDiagram(svg, data);
 -->
 ![](./assets/pipeline_overview.svg)
 
@@ -228,24 +199,9 @@ $$
 
 <!--
 D3 source:
-const nodes = [
-  { id: "iter", x: 280, y: 102, w: 360, h: 72, title: "Iteration k", subtitle: "compute R_RES, metrics, and C[y]" },
-  { id: "div", x: 280, y: 230, w: 360, h: 72, title: "Divergence Guard", subtitle: "three consecutive RMS increases" },
-  { id: "floor", x: 280, y: 358, w: 360, h: 72, title: "Epsilon Floor", subtitle: "1e−9 suppresses early stop" },
-  { id: "conv", x: 280, y: 486, w: 360, h: 72, title: "Convergence Test", subtitle: "RMS delta and residual amplitude" },
-  { id: "next", x: 280, y: 614, w: 360, h: 72, title: "Advance", subtitle: "apply C[y] and increment k" },
-  { id: "stop", x: 742, y: 422, w: 190, h: 72, title: "Stop", subtitle: "divergence, convergence, or limit" }
-];
-const links = [
-  ["iter", "div"],
-  ["div", "floor"],
-  ["floor", "conv"],
-  ["conv", "next"],
-  ["div", "stop"],
-  ["conv", "stop"],
-  ["floor", "next"]
-];
-const svg = d3.create("svg").attr("viewBox", "0 0 1040 820");
+const data = await d3.json("./diagram-data/convergence_logic.json");
+const svg = d3.create("svg").attr("viewBox", `0 0 ${data.width} ${data.height}`);
+renderDiagram(svg, data);
 -->
 ![](./assets/convergence_logic.svg)
 

@@ -1,0 +1,11 @@
+{
+  "name": "rbc-d3-svg-renderer",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Render static SVG workflow diagrams from JSON data with D3 in headless Chromium.",
+  "dependencies": {
+    "d3": "^7.9.0",
+    "playwright": "^1.53.0"
+  }
+}

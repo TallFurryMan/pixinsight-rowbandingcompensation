@@ -1,0 +1,36 @@
+{
+  "width": 1040,
+  "height": 820,
+  "title": "Iteration Control",
+  "titleX": 48,
+  "titleY": 42,
+  "separatorY": 58,
+  "separatorX1": 48,
+  "separatorX2": 992,
+  "nodes": [
+    { "x": 280, "y": 102, "w": 360, "h": 72, "title": "Iteration k", "subtitle": "compute R_RES, metrics, and C[y]" },
+    { "x": 280, "y": 230, "w": 360, "h": 72, "title": "Divergence Guard", "subtitle": "three consecutive RMS increases" },
+    { "x": 280, "y": 358, "w": 360, "h": 72, "title": "Epsilon Floor", "subtitle": "1e−9 suppresses early stop" },
+    { "x": 280, "y": 486, "w": 360, "h": 72, "title": "Convergence Test", "subtitle": "RMS delta and residual amplitude" },
+    { "x": 280, "y": 614, "w": 360, "h": 72, "title": "Advance", "subtitle": "apply C[y] and increment k" },
+    { "x": 742, "y": 422, "w": 190, "h": 72, "title": "Stop", "subtitle": "divergence, convergence, or limit" }
+  ],
+  "paths": [
+    { "d": "M460 174 V230", "class": "line" },
+    { "d": "M460 302 V358", "class": "line" },
+    { "d": "M460 430 V486", "class": "line" },
+    { "d": "M460 558 V614", "class": "line" },
+    { "d": "M640 266 H742 V458", "class": "line" },
+    { "d": "M640 522 H742", "class": "line" },
+    { "d": "M640 394 H710 V650 H640", "class": "line" },
+    { "d": "M460 686 V748 H222 V138 H280", "class": "loop" }
+  ],
+  "texts": [
+    { "x": 686, "y": 252, "text": "yes", "class": "tag", "anchor": "middle" },
+    { "x": 492, "y": 344, "text": "no", "class": "tag", "anchor": "middle" },
+    { "x": 676, "y": 382, "text": "yes", "class": "tag", "anchor": "middle" },
+    { "x": 682, "y": 508, "text": "yes", "class": "tag", "anchor": "middle" },
+    { "x": 492, "y": 472, "text": "no", "class": "tag", "anchor": "middle" },
+    { "x": 490, "y": 736, "text": "next iteration", "class": "tag", "anchor": "middle" }
+  ]
+}
