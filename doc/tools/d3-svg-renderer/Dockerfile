@@ -17,5 +17,7 @@ COPY doc/tools/d3-svg-renderer/package.json ./package.json
 RUN npm install --omit=dev
 
 COPY doc/tools/d3-svg-renderer/render-diagram.mjs ./render-diagram.mjs
+COPY doc/tools/d3-svg-renderer/entrypoint.sh ./entrypoint.sh
+RUN chmod +x ./entrypoint.sh
 
-ENTRYPOINT ["node", "/opt/rbc-d3-svg-renderer/render-diagram.mjs"]
+ENTRYPOINT ["/opt/rbc-d3-svg-renderer/entrypoint.sh"]
