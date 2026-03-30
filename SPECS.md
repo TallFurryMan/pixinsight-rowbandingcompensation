@@ -35,17 +35,17 @@ The current v1 implementation is distributed as a PixInsight script resource wit
 
 ## High-level processing model
 
-The process computes a robust row background profile, optionally stabilized by a soft 2D background model, then derives a row correction signal. This signal can be modulated by:
+The script computes a robust row background profile, optionally stabilized by a soft 2D background model, then derives a row correction signal. This signal can be modulated by:
 
 - star influence,
 - visual prominence / row residual salience,
 - confidence in the row background estimate.
 
-The final correction is applied additively per row to the current corrected image state, optionally protected by a star/structure protection mask.
+The final correction is applied additively per row to the current corrected image state, optionally protected by a star protection mask.
 
 ## Functional requirements
 
-The module shall:
+The script package shall:
 
 1. Accept a target image window.
 2. Optionally accept an external star mask image.
@@ -73,7 +73,7 @@ Expose the current script through its `#feature-id` entry:
 
 - Utilities > RowBandingCompensation
 
-Future native process-menu placement can be defined later if the implementation is migrated from PJSR to a compiled module.
+Future native process-menu placement can be defined later if the implementation is migrated from PJSR to a native process module.
 
 ## Required UI sections
 
@@ -162,7 +162,7 @@ The current implementation warns when the target appears stretched or non-linear
 
 ### Internal data products
 
-The process should produce the following internal arrays and images:
+The script should produce the following internal arrays and images:
 
 - originalImage
 - currentImage
@@ -170,7 +170,6 @@ The process should produce the following internal arrays and images:
 - softBackgroundModel
 - exclusionMask
 - protectionMask
-- structureMask (optional future-ready placeholder)
 - starObjects[]
 - rowBackground[]
 - rowTrend[]
@@ -181,6 +180,12 @@ The process should produce the following internal arrays and images:
 - rowCorrection[]
 - correctedImage
 - differenceImage
+
+No runtime `structureMask` product exists in v1.
+
+### Sample precision
+
+The current v1 implementation uses 32-bit real working images and 32-bit real diagnostic images. Precision is not user-configurable in this release.
 
 ### Star mask preparation
 #### Objective
@@ -585,7 +590,7 @@ If residual RMS increases for three consecutive iterations:
 
 ## Debugging and diagnostics
 
-The process must support optional creation of diagnostic outputs.
+The script must support optional creation of diagnostic outputs.
 
 ### Diagnostic plots or images
 - rowBackground
@@ -595,6 +600,14 @@ The process must support optional creation of diagnostic outputs.
 - rowVisibility
 - rowConfidence
 - rowCorrection
+
+These row-domain diagnostics are rendered as vertical strip views in which:
+
+- Y corresponds to the row index
+- X corresponds to the diagnostic value
+- row 0 is displayed at the top
+
+In the current implementation, `rowResidual` and `rowVisibility` are rendered as horizontal bar plots, while the other row-domain diagnostics are rendered as curve traces.
 
 ### Diagnostic image outputs
 - softBackgroundModel
@@ -733,7 +746,7 @@ These are conservative defaults for v1:
 
 ## Failure handling
 
-The module must fail gracefully.
+The script must fail gracefully.
 
 If no star support image is provided
 - allow execution
@@ -773,7 +786,7 @@ If target is a preview
 ### Suggested class responsibilities
 #### RowBandingCompensationParameters
 
-Stores process parameters and defaults.
+Stores script parameters and persisted instance defaults.
 
 #### RowBandingCompensationEngine
 
@@ -877,8 +890,8 @@ Reasons:
 
 The implementation agent must:
 
-- implement this as a PJSR PixInsight script package with process-instance export support
-- expose it through a process dialog
+- implement this as a PJSR PixInsight script resource package with process-instance export support
+- expose it through a script dialog and `#feature-id`, not through the native `Process` menu
 - provide detailed tooltips for every UI control
 - keep the code modular and readable
 - make each major adjustment individually enable-able
