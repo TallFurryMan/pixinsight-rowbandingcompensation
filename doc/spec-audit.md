@@ -21,13 +21,8 @@
 
 ## Remaining Intentional Abstraction Gaps
 
-These points are still acceptable differences between the specification and the implementation detail level.
-
-- `structureMask` remains a future-facing placeholder in `SPECS.md`. No runtime `structureMask` product exists in v1.
-- `SPECS.md` specifies the algorithmic diagnostic products, but not every rendering detail. The present script renders diagnostic row plots as vertical strip views, with bar-style plots for `rowResidual` and `rowVisibility`.
-- `SPECS.md` does not yet formalize sample precision as a configurable part of the contract. The present implementation still uses a 32-bit real working-image path.
-- The specification remains process-oriented in language where that improves future portability, but the current executable target is still the PJSR package.
+None at the current algorithmic and packaging level. The previous gaps for `structureMask`, diagnostic rendering semantics, 32-bit working precision, and script-versus-process wording have now been incorporated into `SPECS.md`.
 
 ## Audit Conclusion
 
-After reconciliation, `SPECS.md` is consistent with the implemented workflow at the algorithmic level. The remaining gaps are intentional: they concern future extensions, presentation details, or migration to a native process implementation.
+After reconciliation, `SPECS.md` is now consistent with the implemented workflow and current PJSR packaging model. Future drift should be treated as a real documentation bug rather than an accepted abstraction gap.
