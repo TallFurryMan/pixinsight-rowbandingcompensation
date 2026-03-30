@@ -90,9 +90,3 @@ To inspect the actual PJSR widget methods available on your PixInsight build, ru
 Run it from the PixInsight Script Editor or from the application command line with the script-running syntax supported by your installed PixInsight build.
 
 The script prints a console report for `Dialog`, `Control`, `ToolButton`, `PushButton`, `ViewList`, `NumericControl`, `SectionBar`, `Label`, and `ComboBox`.
-
-## Signing
-
-I did not generate a `.xsgn` signature file in this workspace.
-
-That step requires your PixInsight code-signing key material. Once you sign the package, the generated signature artifact should live next to the main script in the package directory.
