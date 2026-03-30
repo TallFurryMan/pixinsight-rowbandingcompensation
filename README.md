@@ -2,6 +2,24 @@
 
 PixInsight PJSR resource package for conservative horizontal row-banding compensation on linear monochrome subframes whose residual banding is still aligned with image rows.
 
+This script was designed and implemented to fix the banding on the Atik camera Horizon II, introduced by high gain and saturated stars. The symptom is very similar to Canon banding, for which script CanonBandingReduction was designed, with slightly different causes.
+
+The algorithm corrects strictly horizontal lines whose mean luminosity is offset by the presence of a saturated or nearly saturated star on that same line. It will not give satisfactory results on images that were rotated, even very slightly, by a registration process or following an integration process of frames with an angle offset.
+
+The algorithm attempts to detect nebulosities, gradients and reflexion halos in order to estimate each row luminosity as precisely as possible in the context of the banding effect. 
+
+![](iris_with_banding.png)
+*(CC-BY-SA E.Dejouhanet)*
+
+![](iris_without_banding.png)
+*(CC-BY-SA E.Dejouhanet)*
+
+This second frame was obtained with default settings, with a convergence limit set to 1e-9, leading to 80 iterations.
+
+The full algorithm is presented in [SPECS.md](./SPECS.md), and its implementation as a PJSR resource developed with GPT-5.4.
+
+The implementation is probably not suited for subframe cosmetic correction yet. Because this would be the step of choice for such a correction, a future version will probably implement the algorithm as a process module.
+
 ## What is implemented
 
 `RowBandingCompensation` is implemented as a PixInsight JavaScript Runtime package under [`src/scripts/RowBandingCompensation`](src/scripts/RowBandingCompensation).
