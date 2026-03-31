@@ -48,19 +48,19 @@ The process accepts a target image and up to two external support images.
 LaTeX source:
 \[
 \begin{aligned}
-M_{\mathrm{excl}} &= \operatorname{Dilate}\!\left( \operatorname{Thresh}(I_{\mathrm{mask}}) \right), \\
-M_{\mathrm{prot}} &= \operatorname{Blur}(I_{\mathrm{mask}}), \\
-R_{\mathrm{inf}}[y] &= \operatorname{Norm}\!\left( \sum_k A_k\,K\!\left(\lvert y-y_k\rvert\right) \right), \\
-R_{\mathrm{inf,fallback}}[y] &= \operatorname{Norm}\!\left( \operatorname{Mean}_x M_{\mathrm{prot}}(x,y) \right).
+M_{\mathrm{excl}} &= \mathrm{Dilate}\!\left( \mathrm{Thresh}(I_{\mathrm{mask}}) \right), \\
+M_{\mathrm{prot}} &= \mathrm{Blur}(I_{\mathrm{mask}}), \\
+R_{\mathrm{inf}}[y] &= \mathrm{Norm}\!\left( \sum_k A_k\,K\!\left(\lvert y-y_k\rvert\right) \right), \\
+R_{\mathrm{inf,fallback}}[y] &= \mathrm{Norm}\!\left( \mathrm{Mean}_x M_{\mathrm{prot}}(x,y) \right).
 \end{aligned}
 \]
 -->
 $$
 \begin{aligned}
-M_{\mathrm{excl}} &= \operatorname{Dilate}\!\left( \operatorname{Thresh}(I_{\mathrm{mask}}) \right), \\
-M_{\mathrm{prot}} &= \operatorname{Blur}(I_{\mathrm{mask}}), \\
-R_{\mathrm{inf}}[y] &= \operatorname{Norm}\!\left( \sum_k A_k\,K\!\left(\lvert y-y_k\rvert\right) \right), \\
-R_{\mathrm{inf,fallback}}[y] &= \operatorname{Norm}\!\left( \operatorname{Mean}_x M_{\mathrm{prot}}(x,y) \right).
+M_{\mathrm{excl}} &= \mathrm{Dilate}\!\left( \mathrm{Thresh}(I_{\mathrm{mask}}) \right), \\
+M_{\mathrm{prot}} &= \mathrm{Blur}(I_{\mathrm{mask}}), \\
+R_{\mathrm{inf}}[y] &= \mathrm{Norm}\!\left( \sum_k A_k\,K\!\left(\lvert y-y_k\rvert\right) \right), \\
+R_{\mathrm{inf,fallback}}[y] &= \mathrm{Norm}\!\left( \mathrm{Mean}_x M_{\mathrm{prot}}(x,y) \right).
 \end{aligned}
 $$
 
@@ -76,14 +76,14 @@ The soft background model is not a background-correction output. It is an intern
 LaTeX source:
 \[
 \begin{aligned}
-B_{\mathrm{soft}}(x,y) &= \operatorname{Bilerp}\!\left( G_\sigma\!\left( \operatorname{Nodes}(I_{\mathrm{cur}}, M_{\mathrm{excl}}) \right) \right), \\
+B_{\mathrm{soft}}(x,y) &= \mathrm{Bilerp}\!\left( G_\sigma\!\left( \mathrm{Nodes}(I_{\mathrm{cur}}, M_{\mathrm{excl}}) \right) \right), \\
 I_{\mathrm{work}}(x,y) &= I_{\mathrm{cur}}(x,y) - B_{\mathrm{soft}}(x,y).
 \end{aligned}
 \]
 -->
 $$
 \begin{aligned}
-B_{\mathrm{soft}}(x,y) &= \operatorname{Bilerp}\!\left( G_\sigma\!\left( \operatorname{Nodes}(I_{\mathrm{cur}}, M_{\mathrm{excl}}) \right) \right), \\
+B_{\mathrm{soft}}(x,y) &= \mathrm{Bilerp}\!\left( G_\sigma\!\left( \mathrm{Nodes}(I_{\mathrm{cur}}, M_{\mathrm{excl}}) \right) \right), \\
 I_{\mathrm{work}}(x,y) &= I_{\mathrm{cur}}(x,y) - B_{\mathrm{soft}}(x,y).
 \end{aligned}
 $$
@@ -132,14 +132,14 @@ LaTeX source:
 \[
 \begin{aligned}
 Q[y] &= \max\!\left(0,\ 1 - c_{\mathrm{conf}}\,(1 - R_{\mathrm{conf}}[y])\right), \\
-W_{\mathrm{prot}}(x,y) &= 1 - s_{\mathrm{prot}}\,\operatorname{clamp}\!\left(M_{\mathrm{prot}}(x,y), 0, 1\right), \\
-C[y] &= \operatorname{clip}\!\Bigl(
+W_{\mathrm{prot}}(x,y) &= 1 - s_{\mathrm{prot}}\,\mathrm{clamp}\!\left(M_{\mathrm{prot}}(x,y), 0, 1\right), \\
+C[y] &= \mathrm{clip}\!\Bigl(
 g\,R_{\mathrm{res}}[y]\,
 \bigl(1 + b_{\star}R_{\mathrm{inf}}[y]\bigr)\,
 \bigl(1 + b_{\mathrm{vis}}R_{\mathrm{vis}}[y]\bigr)\,
 Q[y]
 \Bigr), \\
-I_{\mathrm{next}}(x,y) &= \operatorname{clip}\!\left(
+I_{\mathrm{next}}(x,y) &= \mathrm{clip}\!\left(
 I_{\mathrm{cur}}(x,y) - C[y]\;W_{\mathrm{prot}}(x,y)
 \right).
 \end{aligned}
@@ -148,14 +148,14 @@ I_{\mathrm{cur}}(x,y) - C[y]\;W_{\mathrm{prot}}(x,y)
 $$
 \begin{aligned}
 Q[y] &= \max\!\left(0,\ 1 - c_{\mathrm{conf}}\,(1 - R_{\mathrm{conf}}[y])\right), \\
-W_{\mathrm{prot}}(x,y) &= 1 - s_{\mathrm{prot}}\,\operatorname{clamp}\!\left(M_{\mathrm{prot}}(x,y), 0, 1\right), \\
-C[y] &= \operatorname{clip}\!\Bigl(
+W_{\mathrm{prot}}(x,y) &= 1 - s_{\mathrm{prot}}\,\mathrm{clamp}\!\left(M_{\mathrm{prot}}(x,y), 0, 1\right), \\
+C[y] &= \mathrm{clip}\!\Bigl(
 g\,R_{\mathrm{res}}[y]\,
 \bigl(1 + b_{\star}R_{\mathrm{inf}}[y]\bigr)\,
 \bigl(1 + b_{\mathrm{vis}}R_{\mathrm{vis}}[y]\bigr)\,
 Q[y]
 \Bigr), \\
-I_{\mathrm{next}}(x,y) &= \operatorname{clip}\!\left(
+I_{\mathrm{next}}(x,y) &= \mathrm{clip}\!\left(
 I_{\mathrm{cur}}(x,y) - C[y]\;W_{\mathrm{prot}}(x,y)
 \right).
 \end{aligned}
@@ -177,7 +177,7 @@ Application is performed directly on `I_CUR`, not on the soft-background-subtrac
 LaTeX source:
 \[
 \begin{aligned}
-\Delta_{\mathrm{rms}} &= \operatorname{RMS}(R_{\mathrm{res}}^{(k)} - R_{\mathrm{res}}^{(k-1)}), \\
+\Delta_{\mathrm{rms}} &= \mathrm{RMS}(R_{\mathrm{res}}^{(k)} - R_{\mathrm{res}}^{(k-1)}), \\
 q_{95} &= Q_{0.95}\!\left(\lvert R_{\mathrm{res}}^{(k)} \rvert\right), \\
 \text{stop} &\iff
 \bigl(\Delta_{\mathrm{rms}} \le \varepsilon \land q_{95} \le \varepsilon \bigr)
@@ -188,7 +188,7 @@ q_{95} &= Q_{0.95}\!\left(\lvert R_{\mathrm{res}}^{(k)} \rvert\right), \\
 -->
 $$
 \begin{aligned}
-\Delta_{\mathrm{rms}} &= \operatorname{RMS}(R_{\mathrm{res}}^{(k)} - R_{\mathrm{res}}^{(k-1)}), \\
+\Delta_{\mathrm{rms}} &= \mathrm{RMS}(R_{\mathrm{res}}^{(k)} - R_{\mathrm{res}}^{(k-1)}), \\
 q_{95} &= Q_{0.95}\!\left(\lvert R_{\mathrm{res}}^{(k)} \rvert\right), \\
 \text{stop} &\iff
 \bigl(\Delta_{\mathrm{rms}} \le \varepsilon \land q_{95} \le \varepsilon \bigr)
