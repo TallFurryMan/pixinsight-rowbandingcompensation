@@ -14,14 +14,14 @@ The algorithm attempts to detect nebulosities, gradients and reflexion halos in 
     <th>After compensation</th>
   </tr>
   <tr>
-    <td align="center">
+    <td align="center" width="50%">
       <a href="./iris_with_banding.png">
         <img src="./iris_with_banding.png" alt="Iris Nebula, with banding effect" width="100%">
       </a>
       <br>
       <sub>(CC-BY-SA E.Dejouhanet)</sub>
     </td>
-    <td align="center">
+    <td align="center" width="50%">
       <a href="./iris_without_banding.png">
         <img src="./iris_without_banding.png" alt="Iris Nebula, after banding compensation" width="100%">
       </a>
