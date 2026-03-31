@@ -8,11 +8,28 @@ The algorithm corrects strictly horizontal lines whose mean luminosity is offset
 
 The algorithm attempts to detect nebulosities, gradients and reflexion halos in order to estimate each row luminosity as precisely as possible in the context of the banding effect. It then proceeds iteratively with bounded corrections to balance speed and effect.
 
-![](iris_with_banding.png)
-*(CC-BY-SA E.Dejouhanet)*
-
-![](iris_without_banding.png)
-*(CC-BY-SA E.Dejouhanet)*
+<table>
+  <tr>
+    <th>With visible banding</th>
+    <th>After compensation</th>
+  </tr>
+  <tr>
+    <td align="center">
+      <a href="./iris_with_banding.png">
+        <img src="./iris_with_banding.png" alt="Iris Nebula, with banding effect" width="100%">
+      </a>
+      <br>
+      <sub>(CC-BY-SA E.Dejouhanet)</sub>
+    </td>
+    <td align="center">
+      <a href="./iris_without_banding.png">
+        <img src="./iris_without_banding.png" alt="Iris Nebula, after banding compensation" width="100%">
+      </a>
+      <br>
+      <sub>(CC-BY-SA E.Dejouhanet)</sub>
+    </td>
+  </tr>
+</table>
 
 This second frame was obtained with default settings, with a convergence limit set to 1e-9, leading to 80 iterations. The process took 2'55" on a MacBook M4 Pro 48GB.
 
