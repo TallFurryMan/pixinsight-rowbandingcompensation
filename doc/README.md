@@ -2,7 +2,6 @@
 
 This directory contains the v1 workflow documentation for the current PJSR implementation.
 
-- [`spec-audit.md`](./spec-audit.md): reconciliation record for previously resolved drift between `SPECS.md` and the implemented algorithm.
 - [`workflow.md`](./workflow.md): compact workflow description of the current PJSR script package, its computation stages, intermediate products, iteration logic, and diagnostics.
 - [`assets/`](./assets): embedded SVG workflow diagrams.
 - [`diagram-data/`](./diagram-data): JSON source data for the SVG workflow diagrams.
