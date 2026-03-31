@@ -2,7 +2,7 @@
 
 ## Scope
 
-`SPECS.md` was reconciled against the current script implementation in `src/scripts/RowBandingCompensation`. The objective of this audit is not to restate every requirement, but to identify where the specification had drifted from the actual algorithm and to record the remaining intentional abstraction boundaries.
+`SPECS.md` was reconciled against the current script implementation in `src/scripts/RowBandingCompensation`. The objective of this audit is not to restate every requirement, but to identify where the specification had drifted from the actual algorithm and to record how those discrepancies were resolved.
 
 ## Discrepancies Resolved
 
@@ -25,4 +25,4 @@ None at the current algorithmic and packaging level. The previous gaps for `stru
 
 ## Audit Conclusion
 
-After reconciliation, `SPECS.md` is now consistent with the implemented workflow and current PJSR packaging model. Future drift should be treated as a real documentation bug rather than an accepted abstraction gap.
+After reconciliation, `SPECS.md` is now consistent with the implemented workflow and current PJSR packaging model. This audit should now be read as a historical reconciliation record. Future drift should be treated as a real documentation bug rather than an accepted abstraction gap.

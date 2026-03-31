@@ -2,8 +2,8 @@
 
 This directory contains the v1 workflow documentation for the current PJSR implementation.
 
-- [`spec-audit.md`](./spec-audit.md): reconciliation of `SPECS.md` against the implemented algorithm, including the remaining intentional abstraction gaps.
-- [`workflow.md`](./workflow.md): compact process-style description of the computation, intermediate products, iteration logic, and diagnostics.
+- [`spec-audit.md`](./spec-audit.md): reconciliation record for previously resolved drift between `SPECS.md` and the implemented algorithm.
+- [`workflow.md`](./workflow.md): compact workflow description of the current PJSR script package, its computation stages, intermediate products, iteration logic, and diagnostics.
 - [`assets/`](./assets): embedded SVG workflow diagrams.
 - [`diagram-data/`](./diagram-data): JSON source data for the SVG workflow diagrams.
 - [`diagram-preview.html`](./diagram-preview.html): browser preview page that animates both D3 force-settle passes.

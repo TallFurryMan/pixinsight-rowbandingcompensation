@@ -35,7 +35,7 @@ This second frame was obtained with default settings, with a convergence limit s
 
 The full algorithm is presented in [SPECS.md](./SPECS.md), and its implementation as a PJSR resource developed with GPT-5.4.
 
-The implementation is certainly not exempt of bugs and probably not suited for subframe patching yet. However, because this would be a CosmeticCorrection of choice in a batch script such as WBPP for gain 30 on the Atik Horizon II, a future version will probably implement the algorithm as a process module.
+The implementation is certainly not exempt of bugs and probably not suited for subframe patching yet. However, because this would be a CosmeticCorrection of choice in a batch script such as WBPP for gain 30 on the Atik Horizon II, a future version will probably implement the algorithm as a native PixInsight process module.
 
 ## What is implemented
 
@@ -43,14 +43,14 @@ The implementation is certainly not exempt of bugs and probably not suited for s
 
 It includes:
 
-- A process-like script entry point with process-instance export support
+- A script entry point with process-instance export support
 - A collapsible dialog covering the parameters described in `SPECS.md`
 - Modular engine code for mask preparation, star influence, row profiling, confidence weighting, iterative correction and diagnostics
 - Diagnostic view export for the main intermediate profiles and images
 
 ## Important integration note
 
-This repository now contains a PJSR script package, not a native compiled PixInsight module.
+This repository now contains a PJSR script package, not a native compiled PixInsight process module.
 
 That means:
 
