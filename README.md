@@ -6,7 +6,7 @@ This script was designed and implemented to fix the banding on the Atik camera H
 
 The algorithm corrects strictly horizontal lines whose mean luminosity is offset by the presence of a saturated or nearly saturated star on that same line. It will not give satisfactory results on images that were rotated, even very slightly, by a registration process or following an integration process of frames with an angle offset.
 
-The algorithm attempts to detect nebulosities, gradients and reflexion halos in order to estimate each row luminosity as precisely as possible in the context of the banding effect. 
+The algorithm attempts to detect nebulosities, gradients and reflexion halos in order to estimate each row luminosity as precisely as possible in the context of the banding effect. It then proceeds iteratively with bounded corrections to balance speed and effect.
 
 ![](iris_with_banding.png)
 *(CC-BY-SA E.Dejouhanet)*
@@ -14,11 +14,11 @@ The algorithm attempts to detect nebulosities, gradients and reflexion halos in 
 ![](iris_without_banding.png)
 *(CC-BY-SA E.Dejouhanet)*
 
-This second frame was obtained with default settings, with a convergence limit set to 1e-9, leading to 80 iterations.
+This second frame was obtained with default settings, with a convergence limit set to 1e-9, leading to 80 iterations. The process took 2'55" on a MacBook M4 Pro 48GB.
 
 The full algorithm is presented in [SPECS.md](./SPECS.md), and its implementation as a PJSR resource developed with GPT-5.4.
 
-The implementation is probably not suited for subframe cosmetic correction yet. Because this would be the step of choice for such a correction, a future version will probably implement the algorithm as a process module.
+The implementation is certainly not exempt of bugs and probably not suited for subframe patching yet. However, because this would be a CosmeticCorrection of choice in a batch script such as WBPP for gain 30 on the Atik Horizon II, a future version will probably implement the algorithm as a process module.
 
 ## What is implemented
 
@@ -74,7 +74,8 @@ Recommended input:
 Current v1 limitations:
 
 - Monochrome only
-- No preview-target execution
+- Horizontal corrections only
+- No preview-target execution (make your preview a standalone image)
 - No support yet for slight post-stacking row tilt or other rotated row geometry
 - No automatic star extraction when no external star support image is provided
 - No native process-module registration under the `Process` menu
