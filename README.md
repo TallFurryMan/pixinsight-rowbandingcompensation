@@ -33,7 +33,7 @@ The algorithm attempts to detect nebulosities, gradients and reflexion halos in 
 
 This second frame was obtained with default settings, with a convergence limit set to 1e-9, leading to 80 iterations. The process took 2'55" on a MacBook M4 Pro 48GB.
 
-The full algorithm is presented in [SPECS.md](./SPECS.md), and its implementation as a PJSR resource developed with GPT-5.4.
+The full algorithm is presented in [SPECS.md](./SPECS.md), the workflow and its mathematical background is presented in [doc/workflow.md](./doc/workflow.md). The conversion of the algorithm as a PJSR resource was developed with GPT-5.4.
 
 The implementation is certainly not exempt of bugs and probably not suited for subframe patching yet. However, because this would be a CosmeticCorrection of choice in a batch script such as WBPP for gain 30 on the Atik Horizon II, a future version will probably implement the algorithm as a native PixInsight process module.
 
