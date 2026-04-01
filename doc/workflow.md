@@ -48,19 +48,19 @@ The process accepts a target image and up to two external support images.
 LaTeX source:
 \[
 \begin{aligned}
-M_{\mathrm{excl}} &= \mathrm{Dilate}\!\left( \mathrm{Thresh}(I_{\mathrm{mask}}) \right), \\
+M_{\mathrm{excl}} &= \mathrm{Dilate}\left( \mathrm{Thresh}(I_{\mathrm{mask}}) \right), \\
 M_{\mathrm{prot}} &= \mathrm{Blur}(I_{\mathrm{mask}}), \\
-R_{\mathrm{inf}}[y] &= \mathrm{Norm}\!\left( \sum_k A_k\,K\!\left(\lvert y-y_k\rvert\right) \right), \\
-R_{\mathrm{inf,fallback}}[y] &= \mathrm{Norm}\!\left( \mathrm{Mean}_x M_{\mathrm{prot}}(x,y) \right).
+R_{\mathrm{inf}}[y] &= \mathrm{Norm}\left( \sum_k A_k\,K\left(\lvert y-y_k\rvert\right) \right), \\
+R_{\mathrm{inf,fallback}}[y] &= \mathrm{Norm}\left( \mathrm{Mean}_x M_{\mathrm{prot}}(x,y) \right).
 \end{aligned}
 \]
 -->
 $$
 \begin{aligned}
-M_{\mathrm{excl}} &= \mathrm{Dilate}\!\left( \mathrm{Thresh}(I_{\mathrm{mask}}) \right), \\
+M_{\mathrm{excl}} &= \mathrm{Dilate}\left( \mathrm{Thresh}(I_{\mathrm{mask}}) \right), \\
 M_{\mathrm{prot}} &= \mathrm{Blur}(I_{\mathrm{mask}}), \\
-R_{\mathrm{inf}}[y] &= \mathrm{Norm}\!\left( \sum_k A_k\,K\!\left(\lvert y-y_k\rvert\right) \right), \\
-R_{\mathrm{inf,fallback}}[y] &= \mathrm{Norm}\!\left( \mathrm{Mean}_x M_{\mathrm{prot}}(x,y) \right).
+R_{\mathrm{inf}}[y] &= \mathrm{Norm}\left( \sum_k A_k\,K\left(\lvert y-y_k\rvert\right) \right), \\
+R_{\mathrm{inf,fallback}}[y] &= \mathrm{Norm}\left( \mathrm{Mean}_x M_{\mathrm{prot}}(x,y) \right).
 \end{aligned}
 $$
 
@@ -76,14 +76,14 @@ The soft background model is not a background-correction output. It is an intern
 LaTeX source:
 \[
 \begin{aligned}
-B_{\mathrm{soft}}(x,y) &= \mathrm{Bilerp}\!\left( G_\sigma\!\left( \mathrm{Nodes}(I_{\mathrm{cur}}, M_{\mathrm{excl}}) \right) \right), \\
+B_{\mathrm{soft}}(x,y) &= \mathrm{Bilerp}\left( G_\sigma\left( \mathrm{Nodes}(I_{\mathrm{cur}}, M_{\mathrm{excl}}) \right) \right), \\
 I_{\mathrm{work}}(x,y) &= I_{\mathrm{cur}}(x,y) - B_{\mathrm{soft}}(x,y).
 \end{aligned}
 \]
 -->
 $$
 \begin{aligned}
-B_{\mathrm{soft}}(x,y) &= \mathrm{Bilerp}\!\left( G_\sigma\!\left( \mathrm{Nodes}(I_{\mathrm{cur}}, M_{\mathrm{excl}}) \right) \right), \\
+B_{\mathrm{soft}}(x,y) &= \mathrm{Bilerp}\left( G_\sigma\left( \mathrm{Nodes}(I_{\mathrm{cur}}, M_{\mathrm{excl}}) \right) \right), \\
 I_{\mathrm{work}}(x,y) &= I_{\mathrm{cur}}(x,y) - B_{\mathrm{soft}}(x,y).
 \end{aligned}
 $$
@@ -100,7 +100,7 @@ The row-domain signal is measured on one row at a time after masking and, option
 LaTeX source:
 \[
 \begin{aligned}
-R_{\mathrm{bg}}[y] &= T_x\!\left( I_{\mathrm{work}}(x,y)\ \middle|\ M_{\mathrm{excl}}(x,y)=0 \right), \\
+R_{\mathrm{bg}}[y] &= T_x\left( I_{\mathrm{work}}(x,y)\ \middle|\ M_{\mathrm{excl}}(x,y)=0 \right), \\
 R_{\mathrm{tr}}[y] &= G_\sigma(R_{\mathrm{bg}})[y], \\
 R_{\mathrm{res}}[y] &= R_{\mathrm{bg}}[y] - R_{\mathrm{tr}}[y].
 \end{aligned}
@@ -108,7 +108,7 @@ R_{\mathrm{res}}[y] &= R_{\mathrm{bg}}[y] - R_{\mathrm{tr}}[y].
 -->
 $$
 \begin{aligned}
-R_{\mathrm{bg}}[y] &= T_x\!\left( I_{\mathrm{work}}(x,y)\ \middle|\ M_{\mathrm{excl}}(x,y)=0 \right), \\
+R_{\mathrm{bg}}[y] &= T_x\left( I_{\mathrm{work}}(x,y)\ \middle|\ M_{\mathrm{excl}}(x,y)=0 \right), \\
 R_{\mathrm{tr}}[y] &= G_\sigma(R_{\mathrm{bg}})[y], \\
 R_{\mathrm{res}}[y] &= R_{\mathrm{bg}}[y] - R_{\mathrm{tr}}[y].
 \end{aligned}
@@ -131,15 +131,15 @@ The correction model is multiplicative around the residual row signal. Modulatio
 LaTeX source:
 \[
 \begin{aligned}
-Q[y] &= \max\!\left(0,\ 1 - c_{\mathrm{conf}}\,(1 - R_{\mathrm{conf}}[y])\right), \\
-W_{\mathrm{prot}}(x,y) &= 1 - s_{\mathrm{prot}}\,\mathrm{clamp}\!\left(M_{\mathrm{prot}}(x,y), 0, 1\right), \\
-C[y] &= \mathrm{clip}\!\Bigl(
+Q[y] &= \max\left(0,\ 1 - c_{\mathrm{conf}}\,(1 - R_{\mathrm{conf}}[y])\right), \\
+W_{\mathrm{prot}}(x,y) &= 1 - s_{\mathrm{prot}}\,\mathrm{clamp}\left(M_{\mathrm{prot}}(x,y), 0, 1\right), \\
+C[y] &= \mathrm{clip}\Bigl(
 g\,R_{\mathrm{res}}[y]\,
 \bigl(1 + b_{\star}R_{\mathrm{inf}}[y]\bigr)\,
 \bigl(1 + b_{\mathrm{vis}}R_{\mathrm{vis}}[y]\bigr)\,
 Q[y]
 \Bigr), \\
-I_{\mathrm{next}}(x,y) &= \mathrm{clip}\!\left(
+I_{\mathrm{next}}(x,y) &= \mathrm{clip}\left(
 I_{\mathrm{cur}}(x,y) - C[y]\;W_{\mathrm{prot}}(x,y)
 \right).
 \end{aligned}
@@ -147,15 +147,15 @@ I_{\mathrm{cur}}(x,y) - C[y]\;W_{\mathrm{prot}}(x,y)
 -->
 $$
 \begin{aligned}
-Q[y] &= \max\!\left(0,\ 1 - c_{\mathrm{conf}}\,(1 - R_{\mathrm{conf}}[y])\right), \\
-W_{\mathrm{prot}}(x,y) &= 1 - s_{\mathrm{prot}}\,\mathrm{clamp}\!\left(M_{\mathrm{prot}}(x,y), 0, 1\right), \\
-C[y] &= \mathrm{clip}\!\Bigl(
+Q[y] &= \max\left(0,\ 1 - c_{\mathrm{conf}}\,(1 - R_{\mathrm{conf}}[y])\right), \\
+W_{\mathrm{prot}}(x,y) &= 1 - s_{\mathrm{prot}}\,\mathrm{clamp}\left(M_{\mathrm{prot}}(x,y), 0, 1\right), \\
+C[y] &= \mathrm{clip}\Bigl(
 g\,R_{\mathrm{res}}[y]\,
 \bigl(1 + b_{\star}R_{\mathrm{inf}}[y]\bigr)\,
 \bigl(1 + b_{\mathrm{vis}}R_{\mathrm{vis}}[y]\bigr)\,
 Q[y]
 \Bigr), \\
-I_{\mathrm{next}}(x,y) &= \mathrm{clip}\!\left(
+I_{\mathrm{next}}(x,y) &= \mathrm{clip}\left(
 I_{\mathrm{cur}}(x,y) - C[y]\;W_{\mathrm{prot}}(x,y)
 \right).
 \end{aligned}
@@ -178,7 +178,7 @@ LaTeX source:
 \[
 \begin{aligned}
 \Delta_{\mathrm{rms}} &= \mathrm{RMS}(R_{\mathrm{res}}^{(k)} - R_{\mathrm{res}}^{(k-1)}), \\
-q_{95} &= Q_{0.95}\!\left(\lvert R_{\mathrm{res}}^{(k)} \rvert\right), \\
+q_{95} &= Q_{0.95}\left(\lvert R_{\mathrm{res}}^{(k)} \rvert\right), \\
 \text{stop} &\iff
 \bigl(\Delta_{\mathrm{rms}} \le \varepsilon \land q_{95} \le \varepsilon \bigr)
 \ \lor\
@@ -189,7 +189,7 @@ q_{95} &= Q_{0.95}\!\left(\lvert R_{\mathrm{res}}^{(k)} \rvert\right), \\
 $$
 \begin{aligned}
 \Delta_{\mathrm{rms}} &= \mathrm{RMS}(R_{\mathrm{res}}^{(k)} - R_{\mathrm{res}}^{(k-1)}), \\
-q_{95} &= Q_{0.95}\!\left(\lvert R_{\mathrm{res}}^{(k)} \rvert\right), \\
+q_{95} &= Q_{0.95}\left(\lvert R_{\mathrm{res}}^{(k)} \rvert\right), \\
 \text{stop} &\iff
 \bigl(\Delta_{\mathrm{rms}} \le \varepsilon \land q_{95} \le \varepsilon \bigr)
 \ \lor\
