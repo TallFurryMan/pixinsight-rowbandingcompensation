@@ -52,11 +52,26 @@ function main()
    var parameters = new RowBandingCompensationParameters();
    parameters.importParameters();
 
+   function executeEngine( engine, targetView )
+   {
+      var abortEnabledBackup = console.abortEnabled;
+      console.abortEnabled = true;
+      rbcResetAbortState();
+      try
+      {
+         engine.execute( targetView );
+      }
+      finally
+      {
+         console.abortEnabled = abortEnabledBackup;
+      }
+   }
+
    if ( Parameters.isViewTarget )
    {
       parameters.exportParameters();
       var engineOnView = new RowBandingCompensationEngine( parameters );
-      engineOnView.execute( Parameters.targetView );
+      executeEngine( engineOnView, Parameters.targetView );
       return;
    }
 
@@ -64,7 +79,7 @@ function main()
    {
       parameters.exportParameters();
       var engineOnInstance = new RowBandingCompensationEngine( parameters );
-      engineOnInstance.execute( null );
+      executeEngine( engineOnInstance, null );
       return;
    }
 
@@ -75,7 +90,7 @@ function main()
       parameters.exportParameters();
 
       var engine = new RowBandingCompensationEngine( parameters );
-      engine.execute( null );
+      executeEngine( engine, null );
    }
 }
 
@@ -85,6 +100,11 @@ try
 }
 catch ( error )
 {
-   console.criticalln( error.toString() );
-   (new MessageBox( "<p>" + error.toString() + "</p>", TITLE, StdIcon_Error, StdButton_Ok )).execute();
+   if ( rbcIsAbortError( error ) )
+      console.noteln( "<end><cbr>Execution aborted." );
+   else
+   {
+      console.criticalln( error.toString() );
+      (new MessageBox( "<p>" + error.toString() + "</p>", TITLE, StdIcon_Error, StdButton_Ok )).execute();
+   }
 }

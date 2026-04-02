@@ -33,6 +33,8 @@ function RowBandingCompensationStarAnalyzer( parameters )
 
       for ( var i = 0; i < detectedStars.length; ++i )
       {
+         if ( (i & 31) == 0 )
+            rbcThrowIfAborted();
          var measured = this.measureStar( maskSet.analysisImage, detectedStars[ i ] );
          if ( measured.area < this.parameters.minimumStarArea )
             continue;
@@ -63,6 +65,8 @@ function RowBandingCompensationStarAnalyzer( parameters )
 
       for ( var j = 0; j < keptStars.length; ++j )
       {
+         if ( (j & 31) == 0 )
+            rbcThrowIfAborted();
          var star = keptStars[ j ];
          var peakScore = this.parameters.brightnessThreshold < 1
             ? rbcClamp( (star.peakIntensity - this.parameters.brightnessThreshold) / Math.max( 0.000001, 1 - this.parameters.brightnessThreshold ), 0, 1 )
@@ -102,6 +106,8 @@ function RowBandingCompensationStarAnalyzer( parameters )
 
       for ( var y = rect.y0; y < rect.y1; ++y )
       {
+         if ( ((y - rect.y0) & 15) == 0 )
+            rbcThrowIfAborted();
          var row = rbcReadRow( image, y );
          for ( var x = rect.x0; x < rect.x1; ++x )
          {
@@ -142,6 +148,8 @@ function RowBandingCompensationStarAnalyzer( parameters )
 
       for ( var i = 0; i < starObjects.length; ++i )
       {
+         if ( (i & 31) == 0 )
+            rbcThrowIfAborted();
          var star = starObjects[ i ];
          var centerRow = Math.round( star.centroid.y );
          var support = Math.max( radius, Math.ceil( star.effectiveRadius ) );
@@ -181,6 +189,8 @@ function RowBandingCompensationStarAnalyzer( parameters )
       var occupancy = new Array( imageHeight );
       for ( var y = 0; y < imageHeight; ++y )
       {
+         if ( (y & 63) == 0 )
+            rbcThrowIfAborted();
          var row = rbcReadRow( image, y );
          occupancy[ y ] = rbcMean( row );
       }

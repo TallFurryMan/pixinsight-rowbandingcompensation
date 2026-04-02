@@ -25,6 +25,7 @@ function RowBandingCompensationDialog( parameters )
       "The implementation follows the PJSR script path described in the project spec, with optional star-guided modulation, " +
       "confidence weighting and diagnostic outputs.</p>" +
       "<p>This version creates corrected output as a new image and can export a process instance for repeatable execution.</p>" +
+      "<p>During processing, use the console Pause/Abort button to cancel the current run.</p>" +
       "<p>Typical use: select the target image, optionally provide a stars-only companion image derived from it, and add a separate star mask only if you already have one. " +
       "Iterative processing is intended to be monitored in the console: watch the residual values, especially <i>Residual |95%| amplitude</i>, and inspect a stretched result or difference image for persistent rows, sign inversions, or star-side artifacts.</p>";
 

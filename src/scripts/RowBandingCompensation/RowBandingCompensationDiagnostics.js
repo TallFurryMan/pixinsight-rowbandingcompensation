@@ -78,6 +78,8 @@ function RowBandingCompensationDiagnosticsExporter( parameters )
 
       for ( var i = 0; i < values.length; ++i )
       {
+         if ( (i & 63) == 0 )
+            rbcThrowIfAborted();
          var x = Math.round( ((values[ i ] - minValue) / valueSpan) * (width - 1) );
          var y = values.length > 1
             ? Math.round( i * (height - 1) / (values.length - 1) )
@@ -116,6 +118,7 @@ function RowBandingCompensationDiagnosticsExporter( parameters )
       var progress = rbcCreateProgressReporter( "  Writing soft background", height, 5 );
       for ( var y = 0; y < height; ++y )
       {
+         rbcThrowIfAborted();
          rbcWriteRow( window.mainView.image, y, softBackgroundModel.rowAt( y, width ) );
          progress( y + 1 );
       }
@@ -130,6 +133,7 @@ function RowBandingCompensationDiagnosticsExporter( parameters )
       var progress = rbcCreateProgressReporter( "  Writing working image", image.height, 5 );
       for ( var y = 0; y < image.height; ++y )
       {
+         rbcThrowIfAborted();
          var row = rbcReadRow( image, y );
          var backgroundRow = softBackgroundModel.rowAt( y, image.width );
          for ( var x = 0; x < row.length; ++x )
@@ -148,6 +152,7 @@ function RowBandingCompensationDiagnosticsExporter( parameters )
       var progress = rbcCreateProgressReporter( "  Writing difference image", correctedImage.height, 5 );
       for ( var y = 0; y < correctedImage.height; ++y )
       {
+         rbcThrowIfAborted();
          var correctedRow = rbcReadRow( correctedImage, y );
          var originalRow = rbcReadRow( originalImage, y );
          for ( var x = 0; x < correctedRow.length; ++x )

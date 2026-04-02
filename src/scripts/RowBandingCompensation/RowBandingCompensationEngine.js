@@ -10,6 +10,7 @@ function RowBandingCompensationEngine( parameters )
    this.execute = function( explicitTargetView )
    {
       var executionStart = rbcNowMilliseconds();
+      rbcResetAbortState();
       var targetView = this.resolveTargetView( explicitTargetView );
       this.validateTargetView( targetView );
 
@@ -24,6 +25,7 @@ function RowBandingCompensationEngine( parameters )
       var targetId = targetView.id;
 
       this.logExecutionContext( targetView, starMaskView, starsOnlyView );
+      console.writeln( "Abort support: use the console Pause/Abort button during processing." );
       rbcLogProgress( format(
          "Target geometry: %d x %d (%.2f MPix)",
          originalImage.width,
@@ -58,6 +60,7 @@ function RowBandingCompensationEngine( parameters )
 
       for ( var iteration = 0; iteration < iterations; ++iteration )
       {
+         rbcThrowIfAborted();
          var iterationStart = rbcNowMilliseconds();
          console.noteln( format( "<end><cbr>Iteration %d/%d", iteration + 1, iterations ) );
 
@@ -206,14 +209,15 @@ function RowBandingCompensationEngine( parameters )
 
       if ( this.parameters.enableDiagnostics )
          rbcLogProgress( "Exporting diagnostic products..." );
-      this.diagnosticsExporter.exportIterationProducts(
-         targetId,
-         currentImage,
-         originalImage,
-         finalBackgroundModel,
-         finalProfileData,
-         finalInfluence );
+         this.diagnosticsExporter.exportIterationProducts(
+            targetId,
+            currentImage,
+            originalImage,
+            finalBackgroundModel,
+            finalProfileData,
+            finalInfluence );
 
+      rbcThrowIfAborted();
       rbcLogProgress( "Total execution time: " + rbcFormatDuration( rbcNowMilliseconds() - executionStart ) );
 
       return {

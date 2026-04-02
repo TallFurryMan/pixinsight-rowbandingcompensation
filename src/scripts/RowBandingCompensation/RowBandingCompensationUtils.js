@@ -1,3 +1,48 @@
+var RBC_ABORT_ERROR_MESSAGE = "abort";
+var rbcAbortNoticeShown = false;
+
+function rbcResetAbortState()
+{
+   rbcAbortNoticeShown = false;
+}
+
+function rbcIsAbortRequested()
+{
+   return (typeof console != "undefined" &&
+      console != null &&
+      console.abortRequested === true) ||
+      (typeof Console != "undefined" &&
+      Console != null &&
+      Console.abortRequested === true);
+}
+
+function rbcThrowIfAborted()
+{
+   if ( typeof processEvents == "function" )
+      processEvents();
+
+   if ( !rbcIsAbortRequested() )
+      return;
+
+   if ( !rbcAbortNoticeShown )
+   {
+      console.warningln( "<end><cbr>Abort requested." );
+      rbcAbortNoticeShown = true;
+   }
+
+   throw new Error( RBC_ABORT_ERROR_MESSAGE );
+}
+
+function rbcIsAbortError( error )
+{
+   if ( error == null )
+      return false;
+   if ( error.message != null && error.message == RBC_ABORT_ERROR_MESSAGE )
+      return true;
+   var text = error.toString();
+   return text == RBC_ABORT_ERROR_MESSAGE || text == "Error: " + RBC_ABORT_ERROR_MESSAGE;
+}
+
 function rbcClamp( value, low, high )
 {
    if ( value < low )
@@ -372,6 +417,8 @@ function rbcApplyThresholdToImage( image, threshold )
 {
    for ( var y = 0; y < image.height; ++y )
    {
+      if ( (y & 31) == 0 )
+         rbcThrowIfAborted();
       var row = rbcReadRow( image, y );
       for ( var x = 0; x < row.length; ++x )
          row[ x ] = row[ x ] >= threshold ? 1 : 0;
@@ -388,6 +435,8 @@ function rbcNormalizeImage( image )
       var scale = maximum - minimum;
       for ( var y = 0; y < image.height; ++y )
       {
+         if ( (y & 31) == 0 )
+            rbcThrowIfAborted();
          var row = rbcReadRow( image, y );
          for ( var x = 0; x < row.length; ++x )
             row[ x ] = (row[ x ] - minimum) / scale;
@@ -448,8 +497,7 @@ function rbcLogProgress( message )
    console.writeln( message );
    if ( typeof console.flush == "function" )
       console.flush();
-   if ( typeof processEvents == "function" )
-      processEvents();
+   rbcThrowIfAborted();
 }
 
 function rbcCreateProgressReporter( label, totalCount, bucketCount )
@@ -462,6 +510,8 @@ function rbcCreateProgressReporter( label, totalCount, bucketCount )
 
    return function( completedCount )
    {
+      rbcThrowIfAborted();
+
       var completed = rbcClamp( Math.round( completedCount ), 0, totalCount );
       var bucket = completed >= totalCount ? bucketCount : Math.floor( completed * bucketCount / totalCount );
       if ( bucket <= lastBucket )
