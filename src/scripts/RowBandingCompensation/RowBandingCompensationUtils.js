@@ -654,9 +654,28 @@ function rbcCopyImage( sourceImage )
    return copy;
 }
 
-function rbcReadRow( image, y )
+function rbcCreateRowBuffer( length )
 {
-   var row = [];
+   length = Math.max( 0, Math.round( length ) );
+   if ( typeof Float32Array == "function" )
+      return new Float32Array( length );
+
+   var row = new Array( length );
+   for ( var i = 0; i < length; ++i )
+      row[ i ] = 0;
+   return row;
+}
+
+function rbcEnsureRowBuffer( row, length )
+{
+   if ( row == null || row.length != length )
+      return rbcCreateRowBuffer( length );
+   return row;
+}
+
+function rbcReadRow( image, y, row )
+{
+   row = rbcEnsureRowBuffer( row, image.width );
    image.getSamples( row, new Rect( 0, y, image.width, y + 1 ) );
    return row;
 }
@@ -713,11 +732,12 @@ function rbcCreateCircularStructure( radius )
 
 function rbcApplyThresholdToImage( image, threshold )
 {
+   var row = rbcCreateRowBuffer( image.width );
    for ( var y = 0; y < image.height; ++y )
    {
       if ( (y & 31) == 0 )
          rbcThrowIfAborted();
-      var row = rbcReadRow( image, y );
+      row = rbcReadRow( image, y, row );
       for ( var x = 0; x < row.length; ++x )
          row[ x ] = row[ x ] >= threshold ? 1 : 0;
       rbcWriteRow( image, y, row );
@@ -731,11 +751,12 @@ function rbcNormalizeImage( image )
    if ( maximum > minimum )
    {
       var scale = maximum - minimum;
+      var row = rbcCreateRowBuffer( image.width );
       for ( var y = 0; y < image.height; ++y )
       {
          if ( (y & 31) == 0 )
             rbcThrowIfAborted();
-         var row = rbcReadRow( image, y );
+         row = rbcReadRow( image, y, row );
          for ( var x = 0; x < row.length; ++x )
             row[ x ] = (row[ x ] - minimum) / scale;
          rbcWriteRow( image, y, row );

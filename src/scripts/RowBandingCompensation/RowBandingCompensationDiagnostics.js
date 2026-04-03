@@ -116,10 +116,12 @@ function RowBandingCompensationDiagnosticsExporter( parameters )
       var window = new ImageWindow( width, height, 1, 32, true, false, rbcGenerateUniqueId( targetId + "_softBackground" ) );
       window.mainView.beginProcess( UndoFlag_NoSwapFile );
       var progress = rbcCreateProgressReporter( "  Writing soft background", height, 5 );
+      var row = rbcCreateRowBuffer( width );
       for ( var y = 0; y < height; ++y )
       {
          rbcThrowIfAborted();
-         rbcWriteRow( window.mainView.image, y, softBackgroundModel.rowAt( y, width ) );
+         row = softBackgroundModel.rowAt( y, width, row );
+         rbcWriteRow( window.mainView.image, y, row );
          progress( y + 1 );
       }
       window.mainView.endProcess();
@@ -131,11 +133,13 @@ function RowBandingCompensationDiagnosticsExporter( parameters )
       var window = new ImageWindow( image.width, image.height, 1, 32, true, false, rbcGenerateUniqueId( targetId + "_working" ) );
       window.mainView.beginProcess( UndoFlag_NoSwapFile );
       var progress = rbcCreateProgressReporter( "  Writing working image", image.height, 5 );
+      var row = rbcCreateRowBuffer( image.width );
+      var backgroundRow = rbcCreateRowBuffer( image.width );
       for ( var y = 0; y < image.height; ++y )
       {
          rbcThrowIfAborted();
-         var row = rbcReadRow( image, y );
-         var backgroundRow = softBackgroundModel.rowAt( y, image.width );
+         row = rbcReadRow( image, y, row );
+         backgroundRow = softBackgroundModel.rowAt( y, image.width, backgroundRow );
          for ( var x = 0; x < row.length; ++x )
             row[ x ] -= backgroundRow[ x ];
          rbcWriteRow( window.mainView.image, y, row );
@@ -150,11 +154,13 @@ function RowBandingCompensationDiagnosticsExporter( parameters )
       var window = new ImageWindow( correctedImage.width, correctedImage.height, 1, 32, true, false, rbcGenerateUniqueId( targetId + "_difference" ) );
       window.mainView.beginProcess( UndoFlag_NoSwapFile );
       var progress = rbcCreateProgressReporter( "  Writing difference image", correctedImage.height, 5 );
+      var correctedRow = rbcCreateRowBuffer( correctedImage.width );
+      var originalRow = rbcCreateRowBuffer( correctedImage.width );
       for ( var y = 0; y < correctedImage.height; ++y )
       {
          rbcThrowIfAborted();
-         var correctedRow = rbcReadRow( correctedImage, y );
-         var originalRow = rbcReadRow( originalImage, y );
+         correctedRow = rbcReadRow( correctedImage, y, correctedRow );
+         originalRow = rbcReadRow( originalImage, y, originalRow );
          for ( var x = 0; x < correctedRow.length; ++x )
             correctedRow[ x ] -= originalRow[ x ];
          rbcWriteRow( window.mainView.image, y, correctedRow );

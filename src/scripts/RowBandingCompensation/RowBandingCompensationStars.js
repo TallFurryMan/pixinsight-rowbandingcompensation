@@ -103,12 +103,13 @@ function RowBandingCompensationStarAnalyzer( parameters )
       var area = 0;
       var peakIntensity = 0;
       var saturatedPixelCount = 0;
+      var row = rbcCreateRowBuffer( image.width );
 
       for ( var y = rect.y0; y < rect.y1; ++y )
       {
          if ( ((y - rect.y0) & 15) == 0 )
             rbcThrowIfAborted();
-         var row = rbcReadRow( image, y );
+         row = rbcReadRow( image, y, row );
          for ( var x = rect.x0; x < rect.x1; ++x )
          {
             var value = row[ x ];
@@ -187,11 +188,12 @@ function RowBandingCompensationStarAnalyzer( parameters )
          return this.zeroProfile( imageHeight );
 
       var occupancy = new Array( imageHeight );
+      var row = rbcCreateRowBuffer( image.width );
       for ( var y = 0; y < imageHeight; ++y )
       {
          if ( (y & 63) == 0 )
             rbcThrowIfAborted();
-         var row = rbcReadRow( image, y );
+         row = rbcReadRow( image, y, row );
          occupancy[ y ] = rbcMean( row );
       }
       return rbcNormalizeArray( occupancy );

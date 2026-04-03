@@ -27,12 +27,15 @@ function RowBandingCompensationBackgroundModel( parameters )
       var sampleRows = Math.ceil( image.height / sampleStep );
       var progress = rbcCreateProgressReporter( "  Background sampling", sampleRows, 5 );
       var sampledRows = 0;
+      var imageRow = rbcCreateRowBuffer( image.width );
+      var maskRow = exclusionImage != null ? rbcCreateRowBuffer( image.width ) : null;
 
       for ( var y = 0; y < image.height; y += sampleStep )
       {
          rbcThrowIfAborted();
-         var imageRow = rbcReadRow( image, y );
-         var maskRow = exclusionImage != null ? rbcReadRow( exclusionImage, y ) : null;
+         imageRow = rbcReadRow( image, y, imageRow );
+         if ( exclusionImage != null )
+            maskRow = rbcReadRow( exclusionImage, y, maskRow );
          var gy = y / this.cellSize;
          var y0 = rbcClamp( Math.floor( gy ), 0, this.gridHeight - 1 );
          var y1 = Math.min( this.gridHeight - 1, y0 + 1 );
@@ -198,9 +201,9 @@ function RowBandingCompensationBackgroundModel( parameters )
       return (1 - fy) * ((1 - fx) * v00 + fx * v10) + fy * ((1 - fx) * v01 + fx * v11);
    };
 
-   this.rowAt = function( y, width )
+   this.rowAt = function( y, width, row )
    {
-      var row = new Array( width );
+      row = rbcEnsureRowBuffer( row, width );
       for ( var x = 0; x < width; ++x )
          row[ x ] = this.valueAt( x, y );
       return row;
@@ -227,20 +230,23 @@ function RowBandingCompensationProfileEstimator( parameters )
       var anyFlags = new Array( height );
 
       var insufficientRows = 0;
-      var reusableBackgroundRows = [];
       var rowProgress = rbcCreateProgressReporter( "  Row sampling", height, 5 );
+      var imageRow = rbcCreateRowBuffer( width );
+      var maskRow = exclusionImage != null ? rbcCreateRowBuffer( width ) : null;
+      var backgroundRow = softBackgroundModel != null ? rbcCreateRowBuffer( width ) : null;
 
       for ( var y = 0; y < height; ++y )
       {
          rbcThrowIfAborted();
-         var imageRow = rbcReadRow( image, y );
-         var maskRow = exclusionImage != null ? rbcReadRow( exclusionImage, y ) : null;
-         var backgroundRow = null;
+         imageRow = rbcReadRow( image, y, imageRow );
+         if ( exclusionImage != null )
+            maskRow = rbcReadRow( exclusionImage, y, maskRow );
+         else
+            maskRow = null;
          if ( softBackgroundModel != null )
-         {
-            backgroundRow = softBackgroundModel.rowAt( y, width );
-            reusableBackgroundRows.push( backgroundRow );
-         }
+            backgroundRow = softBackgroundModel.rowAt( y, width, backgroundRow );
+         else
+            backgroundRow = null;
 
          var validSamples = [];
          for ( var x = 0; x < width; ++x )
@@ -433,11 +439,16 @@ function RowBandingCompensationCorrectionApplier( parameters )
    this.apply = function( image, rowCorrection, protectionImage )
    {
       var progress = rbcCreateProgressReporter( "  Applying correction", image.height, 5 );
+      var row = rbcCreateRowBuffer( image.width );
+      var protectionRow = protectionImage != null ? rbcCreateRowBuffer( image.width ) : null;
       for ( var y = 0; y < image.height; ++y )
       {
          rbcThrowIfAborted();
-         var row = rbcReadRow( image, y );
-         var protectionRow = protectionImage != null ? rbcReadRow( protectionImage, y ) : null;
+         row = rbcReadRow( image, y, row );
+         if ( protectionImage != null )
+            protectionRow = rbcReadRow( protectionImage, y, protectionRow );
+         else
+            protectionRow = null;
 
          for ( var x = 0; x < row.length; ++x )
          {
