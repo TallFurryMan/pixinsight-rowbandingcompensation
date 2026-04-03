@@ -387,6 +387,106 @@ function rbcQuantileSorted( sortedValues, q )
    return sortedValues[ index ] * (1 - fraction) + sortedValues[ index + 1 ] * fraction;
 }
 
+function rbcSwapValues( values, i, j )
+{
+   if ( i == j )
+      return;
+   var value = values[ i ];
+   values[ i ] = values[ j ];
+   values[ j ] = value;
+}
+
+function rbcMedianOfThreePivotIndex( values, left, right )
+{
+   var mid = left + ((right - left) >> 1);
+   var a = values[ left ];
+   var b = values[ mid ];
+   var c = values[ right ];
+
+   if ( a < b )
+   {
+      if ( b < c )
+         return mid;
+      return a < c ? right : left;
+   }
+
+   if ( a < c )
+      return left;
+   return b < c ? right : mid;
+}
+
+function rbcPartitionAroundPivot( values, left, right, pivotIndex )
+{
+   var pivotValue = values[ pivotIndex ];
+   rbcSwapValues( values, pivotIndex, right );
+   var storeIndex = left;
+
+   for ( var i = left; i < right; ++i )
+      if ( values[ i ] < pivotValue )
+         rbcSwapValues( values, storeIndex++, i );
+
+   rbcSwapValues( values, storeIndex, right );
+   return storeIndex;
+}
+
+function rbcSelectKthInPlace( values, k )
+{
+   if ( values.length == 0 )
+      return 0;
+
+   var left = 0;
+   var right = values.length - 1;
+   k = rbcClamp( Math.round( k ), left, right );
+
+   while ( left < right )
+   {
+      var pivotIndex = rbcMedianOfThreePivotIndex( values, left, right );
+      pivotIndex = rbcPartitionAroundPivot( values, left, right, pivotIndex );
+
+      if ( k == pivotIndex )
+         return values[ k ];
+      if ( k < pivotIndex )
+         right = pivotIndex - 1;
+      else
+         left = pivotIndex + 1;
+   }
+
+   return values[ left ];
+}
+
+function rbcMedianInPlace( values )
+{
+   if ( values.length == 0 )
+      return 0;
+
+   var highIndex = values.length >> 1;
+   if ( (values.length & 1) != 0 )
+      return rbcSelectKthInPlace( values, highIndex );
+
+   var lowValue = rbcSelectKthInPlace( values, highIndex - 1 );
+   var highValue = rbcSelectKthInPlace( values, highIndex );
+   return 0.5 * (lowValue + highValue);
+}
+
+function rbcQuantileInPlace( values, q )
+{
+   if ( values.length == 0 )
+      return 0;
+   if ( values.length == 1 )
+      return values[ 0 ];
+
+   var position = rbcClamp( q, 0, 1 ) * (values.length - 1);
+   var lowIndex = Math.floor( position );
+   var fraction = position - lowIndex;
+   var lowValue = rbcSelectKthInPlace( values, lowIndex );
+
+   if ( fraction == 0 || lowIndex >= values.length - 1 )
+      return lowValue;
+
+   var highValue = rbcSelectKthInPlace( values, lowIndex + 1 );
+   return lowValue * (1 - fraction) + highValue * fraction;
+}
+
 function rbcMad( values )
 {
    if ( values.length == 0 )
@@ -406,13 +506,12 @@ function rbcEstimateRobustLocation( values, estimatorType, lowRejectQuantile, hi
    if ( values.length == 0 )
       return 0;
 
-   var sorted = values.slice( 0 );
-   sorted.sort( rbcNumericSort );
-   if ( estimatorType == "Median" || sorted.length < 3 )
-      return rbcMedianSorted( sorted );
+   var work = values.slice( 0 );
+   if ( estimatorType == "Median" || work.length < 3 )
+      return rbcMedianInPlace( work );
 
-   var lowValue = rbcQuantileSorted( sorted, lowRejectQuantile );
-   var highValue = rbcQuantileSorted( sorted, 1 - highRejectQuantile );
+   var lowValue = rbcQuantileInPlace( work, lowRejectQuantile );
+   var highValue = rbcQuantileInPlace( work, 1 - highRejectQuantile );
    if ( highValue < lowValue )
    {
       var swap = highValue;
@@ -422,17 +521,21 @@ function rbcEstimateRobustLocation( values, estimatorType, lowRejectQuantile, hi
 
    if ( estimatorType == "TrimmedMean" )
    {
-      var trimmed = [];
-      for ( var i = 0; i < sorted.length; ++i )
-         if ( sorted[ i ] >= lowValue && sorted[ i ] <= highValue )
-            trimmed.push( sorted[ i ] );
-      return trimmed.length > 0 ? rbcMean( trimmed ) : rbcMedianSorted( sorted );
+      var trimmedSum = 0;
+      var trimmedCount = 0;
+      for ( var i = 0; i < values.length; ++i )
+         if ( values[ i ] >= lowValue && values[ i ] <= highValue )
+         {
+            trimmedSum += values[ i ];
+            ++trimmedCount;
+         }
+      return trimmedCount > 0 ? trimmedSum / trimmedCount : rbcMedianInPlace( work );
    }
 
-   var winsorized = new Array( sorted.length );
-   for ( var j = 0; j < sorted.length; ++j )
-      winsorized[ j ] = rbcClamp( sorted[ j ], lowValue, highValue );
-   return rbcMean( winsorized );
+   var winsorizedSum = 0;
+   for ( var j = 0; j < values.length; ++j )
+      winsorizedSum += rbcClamp( values[ j ], lowValue, highValue );
+   return winsorizedSum / values.length;
 }
 
 function rbcCreateGaussianKernel1D( radius, sigma )
