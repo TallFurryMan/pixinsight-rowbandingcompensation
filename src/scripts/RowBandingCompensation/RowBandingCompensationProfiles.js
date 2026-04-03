@@ -6,6 +6,11 @@ function RowBandingCompensationBackgroundModel( parameters )
    this.gridHeight = 0;
    this.gridValues = [];
    this.globalLevel = 0;
+   this.cachedRowWidth = 0;
+   this.cachedX0 = [];
+   this.cachedX1 = [];
+   this.cachedWx0 = [];
+   this.cachedWx1 = [];
 
    this.build = function( image, exclusionImage )
    {
@@ -75,6 +80,7 @@ function RowBandingCompensationBackgroundModel( parameters )
 
       this.fillMissingCells();
       this.smoothGrid();
+      this.ensureRowInterpolationCache( image.width );
    };
 
    this.accumulateWeightedSample = function( sums, counts, x, y, weight, value )
@@ -179,6 +185,32 @@ function RowBandingCompensationBackgroundModel( parameters )
       this.gridValues = verticallySmoothed;
    };
 
+   this.ensureRowInterpolationCache = function( width )
+   {
+      width = Math.max( 0, Math.round( width ) );
+      if ( this.cachedRowWidth == width )
+         return;
+
+      this.cachedRowWidth = width;
+      this.cachedX0 = new Array( width );
+      this.cachedX1 = new Array( width );
+      this.cachedWx0 = new Array( width );
+      this.cachedWx1 = new Array( width );
+
+      for ( var x = 0; x < width; ++x )
+      {
+         var gx = rbcClamp( x / this.cellSize, 0, this.gridWidth - 1 );
+         var x0 = Math.floor( gx );
+         var x1 = Math.min( this.gridWidth - 1, x0 + 1 );
+         var fx = x1 > x0 ? gx - x0 : 0;
+
+         this.cachedX0[ x ] = x0;
+         this.cachedX1[ x ] = x1;
+         this.cachedWx0[ x ] = 1 - fx;
+         this.cachedWx1[ x ] = fx;
+      }
+   };
+
    this.valueAt = function( x, y )
    {
       if ( this.gridValues.length == 0 )
@@ -204,14 +236,41 @@ function RowBandingCompensationBackgroundModel( parameters )
    this.rowAt = function( y, width, row )
    {
       row = rbcEnsureRowBuffer( row, width );
+      if ( this.gridValues.length == 0 )
+      {
+         for ( var z = 0; z < width; ++z )
+            row[ z ] = 0;
+         return row;
+      }
+
+      this.ensureRowInterpolationCache( width );
+
+      var gy = rbcClamp( y / this.cellSize, 0, this.gridHeight - 1 );
+      var y0 = Math.floor( gy );
+      var y1 = Math.min( this.gridHeight - 1, y0 + 1 );
+      var fy = y1 > y0 ? gy - y0 : 0;
+      var wy0 = 1 - fy;
+      var wy1 = fy;
+      var rowOffset0 = y0 * this.gridWidth;
+      var rowOffset1 = y1 * this.gridWidth;
+
       for ( var x = 0; x < width; ++x )
-         row[ x ] = this.valueAt( x, y );
+      {
+         var x0 = this.cachedX0[ x ];
+         var x1 = this.cachedX1[ x ];
+         var wx0 = this.cachedWx0[ x ];
+         var wx1 = this.cachedWx1[ x ];
+         var top = this.gridValues[ rowOffset0 + x0 ] * wx0 + this.gridValues[ rowOffset0 + x1 ] * wx1;
+         var bottom = this.gridValues[ rowOffset1 + x0 ] * wx0 + this.gridValues[ rowOffset1 + x1 ] * wx1;
+         row[ x ] = top * wy0 + bottom * wy1;
+      }
       return row;
    };
 
    rbcWrapProfiledMethod( this, "build", "BackgroundModel.build" );
    rbcWrapProfiledMethod( this, "fillMissingCells", "BackgroundModel.fillMissingCells" );
    rbcWrapProfiledMethod( this, "smoothGrid", "BackgroundModel.smoothGrid" );
+    rbcWrapProfiledMethod( this, "ensureRowInterpolationCache", "BackgroundModel.ensureRowInterpolationCache" );
    rbcWrapProfiledMethod( this, "rowAt", "BackgroundModel.rowAt" );
 }
 
