@@ -163,4 +163,10 @@ function RowBandingCompensationDiagnosticsExporter( parameters )
       window.mainView.endProcess();
       window.show();
    };
+
+   rbcWrapProfiledMethod( this, "exportIterationProducts", "DiagnosticsExporter.exportIterationProducts" );
+   rbcWrapProfiledMethod( this, "publishProfilePlot", "DiagnosticsExporter.publishProfilePlot" );
+   rbcWrapProfiledMethod( this, "publishSoftBackgroundModel", "DiagnosticsExporter.publishSoftBackgroundModel" );
+   rbcWrapProfiledMethod( this, "publishWorkingImage", "DiagnosticsExporter.publishWorkingImage" );
+   rbcWrapProfiledMethod( this, "publishDifferenceImage", "DiagnosticsExporter.publishDifferenceImage" );
 }

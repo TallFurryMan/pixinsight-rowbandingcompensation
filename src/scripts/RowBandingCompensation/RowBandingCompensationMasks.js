@@ -111,4 +111,8 @@ function RowBandingCompensationMaskBuilder( parameters )
       protectionImage.truncate( 0, 1 );
       return protectionImage;
    };
+
+   rbcWrapProfiledMethod( this, "build", "MaskBuilder.build" );
+   rbcWrapProfiledMethod( this, "buildExclusionMask", "MaskBuilder.buildExclusionMask" );
+   rbcWrapProfiledMethod( this, "buildProtectionMask", "MaskBuilder.buildProtectionMask" );
 }

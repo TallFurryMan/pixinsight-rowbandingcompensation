@@ -403,6 +403,9 @@ function RowBandingCompensationDialog( parameters )
    this.outputDifferenceCheck = this.addCheckBoxRow( this.diagnosticsSection.control.sizer, "Output difference image:", "outputDifferenceImage",
       function() { return dialog.parameters.outputDifferenceImage; },
       function( value ) { dialog.parameters.outputDifferenceImage = value; } );
+   this.outputProfilingSummaryCheck = this.addCheckBoxRow( this.diagnosticsSection.control.sizer, "Output profiling summary:", "outputProfilingSummary",
+      function() { return dialog.parameters.outputProfilingSummary; },
+      function( value ) { dialog.parameters.outputProfilingSummary = value; } );
    this.outputRowBackgroundCheck = this.addCheckBoxRow( this.diagnosticsSection.control.sizer, "Output row background plot:", "outputRowBackgroundPlot",
       function() { return dialog.parameters.outputRowBackgroundPlot; },
       function( value ) { dialog.parameters.outputRowBackgroundPlot = value; } );
@@ -567,6 +570,7 @@ function RowBandingCompensationDialog( parameters )
       dialog.outputSoftBackgroundCheck.checked = dialog.parameters.outputSoftBackgroundModel;
       dialog.outputWorkingCheck.checked = dialog.parameters.outputWorkingImage;
       dialog.outputDifferenceCheck.checked = dialog.parameters.outputDifferenceImage;
+      dialog.outputProfilingSummaryCheck.checked = dialog.parameters.outputProfilingSummary;
       dialog.outputRowBackgroundCheck.checked = dialog.parameters.outputRowBackgroundPlot;
       dialog.outputRowTrendCheck.checked = dialog.parameters.outputRowTrendPlot;
       dialog.outputRowResidualCheck.checked = dialog.parameters.outputRowResidualPlot;

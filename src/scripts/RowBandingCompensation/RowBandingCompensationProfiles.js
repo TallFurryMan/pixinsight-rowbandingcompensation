@@ -205,6 +205,11 @@ function RowBandingCompensationBackgroundModel( parameters )
          row[ x ] = this.valueAt( x, y );
       return row;
    };
+
+   rbcWrapProfiledMethod( this, "build", "BackgroundModel.build" );
+   rbcWrapProfiledMethod( this, "fillMissingCells", "BackgroundModel.fillMissingCells" );
+   rbcWrapProfiledMethod( this, "smoothGrid", "BackgroundModel.smoothGrid" );
+   rbcWrapProfiledMethod( this, "rowAt", "BackgroundModel.rowAt" );
 }
 
 function RowBandingCompensationProfileEstimator( parameters )
@@ -413,6 +418,12 @@ function RowBandingCompensationProfileEstimator( parameters )
          correction = rbcClampAbsArray( correction, this.parameters.maximumPerIterationCorrection );
       return correction;
    };
+
+   rbcWrapProfiledMethod( this, "estimate", "ProfileEstimator.estimate" );
+   rbcWrapProfiledMethod( this, "zeroProfile", "ProfileEstimator.zeroProfile" );
+   rbcWrapProfiledMethod( this, "computeVisibility", "ProfileEstimator.computeVisibility" );
+   rbcWrapProfiledMethod( this, "computeConfidence", "ProfileEstimator.computeConfidence" );
+   rbcWrapProfiledMethod( this, "computeCorrection", "ProfileEstimator.computeCorrection" );
 }
 
 function RowBandingCompensationCorrectionApplier( parameters )
@@ -446,4 +457,6 @@ function RowBandingCompensationCorrectionApplier( parameters )
          progress( y + 1 );
       }
    };
+
+   rbcWrapProfiledMethod( this, "apply", "CorrectionApplier.apply" );
 }

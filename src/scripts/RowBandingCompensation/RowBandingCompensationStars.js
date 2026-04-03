@@ -196,4 +196,11 @@ function RowBandingCompensationStarAnalyzer( parameters )
       }
       return rbcNormalizeArray( occupancy );
    };
+
+   rbcWrapProfiledMethod( this, "analyze", "StarAnalyzer.analyze" );
+   rbcWrapProfiledMethod( this, "zeroProfile", "StarAnalyzer.zeroProfile" );
+   rbcWrapProfiledMethod( this, "measureStar", "StarAnalyzer.measureStar" );
+   rbcWrapProfiledMethod( this, "buildInfluenceProfile", "StarAnalyzer.buildInfluenceProfile" );
+   rbcWrapProfiledMethod( this, "kernelWeight", "StarAnalyzer.kernelWeight" );
+   rbcWrapProfiledMethod( this, "fallbackInfluence", "StarAnalyzer.fallbackInfluence" );
 }

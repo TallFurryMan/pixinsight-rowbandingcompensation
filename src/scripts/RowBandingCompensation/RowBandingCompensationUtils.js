@@ -1,9 +1,307 @@
 var RBC_ABORT_ERROR_MESSAGE = "abort";
+var RBC_PROFILE_SAMPLE_LIMIT = 4096;
 var rbcAbortNoticeShown = false;
+var rbcProfiledFunctions = [];
+var rbcProfiler = {
+   active: false,
+   outputEnabled: false,
+   label: "",
+   sessionTimer: null,
+   records: null,
+   sampleLimit: RBC_PROFILE_SAMPLE_LIMIT,
+
+   reset: function()
+   {
+      this.records = {
+         step: {},
+         function: {}
+      };
+      this.label = "";
+      this.sessionTimer = null;
+      this.active = false;
+   },
+
+   beginSession: function( label )
+   {
+      this.reset();
+      this.label = label != null ? label : "";
+      this.sessionTimer = rbcCreateElapsedTimer();
+      this.active = true;
+   },
+
+   finishSession: function( status )
+   {
+      if ( !this.active )
+         return;
+
+      var totalMilliseconds = rbcElapsedMilliseconds( this.sessionTimer );
+      this.active = false;
+      if ( this.outputEnabled )
+         this.printReport( status != null ? status : "completed", totalMilliseconds );
+      this.reset();
+   },
+
+   enter: function( kind, name )
+   {
+      if ( !this.active )
+         return null;
+      return {
+         kind: kind,
+         name: name,
+         timer: rbcCreateElapsedTimer()
+      };
+   },
+
+   leave: function( token )
+   {
+      if ( token == null )
+         return 0;
+      var durationMilliseconds = rbcElapsedMilliseconds( token.timer );
+      this.recordDuration( token.kind, token.name, durationMilliseconds );
+      return durationMilliseconds;
+   },
+
+   recordDuration: function( kind, name, durationMilliseconds )
+   {
+      if ( !this.active || durationMilliseconds < 0 )
+         return;
+
+      var kindRecords = this.records[ kind ];
+      if ( kindRecords == null )
+         return;
+
+      var record = kindRecords[ name ];
+      if ( record == null )
+      {
+         record = {
+            name: name,
+            count: 0,
+            totalMilliseconds: 0,
+            minMilliseconds: 0,
+            maxMilliseconds: 0,
+            samples: []
+         };
+         kindRecords[ name ] = record;
+      }
+
+      ++record.count;
+      record.totalMilliseconds += durationMilliseconds;
+      if ( record.count == 1 || durationMilliseconds < record.minMilliseconds )
+         record.minMilliseconds = durationMilliseconds;
+      if ( record.count == 1 || durationMilliseconds > record.maxMilliseconds )
+         record.maxMilliseconds = durationMilliseconds;
+
+      if ( record.samples.length < this.sampleLimit )
+         record.samples.push( durationMilliseconds );
+      else
+      {
+         var replacementIndex = Math.floor( Math.random() * record.count );
+         if ( replacementIndex < this.sampleLimit )
+            record.samples[ replacementIndex ] = durationMilliseconds;
+      }
+   },
+
+   summarizeRecord: function( record )
+   {
+      var sortedSamples = record.samples.slice( 0 );
+      sortedSamples.sort( rbcNumericSort );
+      return {
+         meanMilliseconds: record.totalMilliseconds / Math.max( 1, record.count ),
+         medianMilliseconds: rbcQuantileSorted( sortedSamples, 0.50 ),
+         p95Milliseconds: rbcQuantileSorted( sortedSamples, 0.95 ),
+         sampled: record.samples.length < record.count,
+         sampleCount: record.samples.length
+      };
+   },
+
+   sortedRecords: function( kind )
+   {
+      var kindRecords = this.records[ kind ];
+      var records = [];
+      for ( var name in kindRecords )
+         if ( kindRecords.hasOwnProperty( name ) )
+            records.push( kindRecords[ name ] );
+
+      records.sort( function( a, b )
+      {
+         if ( b.totalMilliseconds != a.totalMilliseconds )
+            return b.totalMilliseconds - a.totalMilliseconds;
+         return b.count - a.count;
+      } );
+      return records;
+   },
+
+   printReport: function( status, totalMilliseconds )
+   {
+      var sampledQuantiles = this.hasSampledQuantiles();
+      rbcConsoleHeader( "Profiling Summary" );
+      console.writeln( "Session: " + this.label );
+      console.writeln( "Status: " + status );
+      console.writeln( "Wall time: " + rbcFormatPreciseDuration( totalMilliseconds ) );
+      console.writeln( "Timers: inclusive wall-clock timings." );
+      console.writeln( "Scope: hot algorithm functions are timed directly; per-pixel helper work is intentionally aggregated into enclosing functions." );
+      if ( sampledQuantiles )
+         console.writeln( "Quantiles: median/p95 are estimated from up to " + this.sampleLimit + " sampled calls per entry." );
+
+      this.printRecordTable( "step", "Algorithm Steps" );
+      this.printRecordTable( "function", "Functions" );
+   },
+
+   printRecordTable: function( kind, title )
+   {
+      var records = this.sortedRecords( kind );
+      if ( records.length == 0 )
+         return;
+
+      console.noteln( "<end><cbr><br>" + title );
+      console.noteln( new Array( title.length + 1 ).join( "-" ) );
+
+      var header =
+         rbcPadLeft( "Calls", 8 ) + " " +
+         rbcPadLeft( "Total", 11 ) + " " +
+         rbcPadLeft( "Mean", 11 ) + " " +
+         rbcPadLeft( "Median", 11 ) + " " +
+         rbcPadLeft( "P95", 11 ) + " " +
+         rbcPadLeft( "Max", 11 ) + " " +
+         rbcPadLeft( "Sample", 8 ) + "  " +
+         "Label";
+      console.writeln( header );
+      console.writeln( new Array( header.length + 1 ).join( "-" ) );
+
+      for ( var i = 0; i < records.length; ++i )
+      {
+         var record = records[ i ];
+         var summary = this.summarizeRecord( record );
+         var sampleText = summary.sampled
+            ? format( "%d~", summary.sampleCount )
+            : "all";
+
+         console.writeln(
+            rbcPadLeft( format( "%d", record.count ), 8 ) + " " +
+            rbcPadLeft( rbcFormatPreciseDuration( record.totalMilliseconds ), 11 ) + " " +
+            rbcPadLeft( rbcFormatPreciseDuration( summary.meanMilliseconds ), 11 ) + " " +
+            rbcPadLeft( rbcFormatPreciseDuration( summary.medianMilliseconds ), 11 ) + " " +
+            rbcPadLeft( rbcFormatPreciseDuration( summary.p95Milliseconds ), 11 ) + " " +
+            rbcPadLeft( rbcFormatPreciseDuration( record.maxMilliseconds ), 11 ) + " " +
+            rbcPadLeft( sampleText, 8 ) + "  " +
+            record.name );
+      }
+   },
+
+   hasSampledQuantiles: function()
+   {
+      for ( var kind in this.records )
+      {
+         if ( !this.records.hasOwnProperty( kind ) )
+            continue;
+         var kindRecords = this.records[ kind ];
+         for ( var name in kindRecords )
+            if ( kindRecords.hasOwnProperty( name ) && kindRecords[ name ].samples.length < kindRecords[ name ].count )
+               return true;
+      }
+      return false;
+   }
+};
+
+rbcProfiler.reset();
 
 function rbcResetAbortState()
 {
    rbcAbortNoticeShown = false;
+}
+
+function rbcCreateElapsedTimer()
+{
+   return typeof ElapsedTime == "function" ? new ElapsedTime : rbcNowMilliseconds();
+}
+
+function rbcElapsedMilliseconds( timer )
+{
+   if ( timer != null && typeof timer.value == "number" )
+      return 1000 * timer.value;
+   return rbcNowMilliseconds() - timer;
+}
+
+function rbcBeginProfilingSession( label )
+{
+   rbcProfiler.beginSession( label );
+}
+
+function rbcSetProfilingOutputEnabled( enabled )
+{
+   rbcProfiler.outputEnabled = enabled === true;
+}
+
+function rbcFinishProfilingSession( status )
+{
+   rbcProfiler.finishSession( status );
+}
+
+function rbcProfileEnter( kind, name )
+{
+   return rbcProfiler.enter( kind, name );
+}
+
+function rbcProfileLeave( token )
+{
+   return rbcProfiler.leave( token );
+}
+
+function rbcProfileBlock( kind, name, callback, thisObject, args )
+{
+   var token = rbcProfileEnter( kind, name );
+   try
+   {
+      return callback.apply( thisObject != null ? thisObject : null, args != null ? args : [] );
+   }
+   finally
+   {
+      rbcProfileLeave( token );
+   }
+}
+
+function rbcWrapProfiledMethod( target, methodName, profileName )
+{
+   if ( target == null )
+      return;
+
+   var original = target[ methodName ];
+   if ( typeof original != "function" || rbcIsProfiledFunction( original ) )
+      return;
+
+   var label = profileName != null ? profileName : methodName;
+   var wrapped = function()
+   {
+      return rbcProfileBlock( "function", label, original, this, arguments );
+   };
+   rbcMarkProfiledFunction( wrapped );
+   target[ methodName ] = wrapped;
+}
+
+function rbcWrapProfiledFunction( name, fn )
+{
+   if ( typeof fn != "function" || rbcIsProfiledFunction( fn ) )
+      return fn;
+
+   var wrapped = function()
+   {
+      return rbcProfileBlock( "function", name, fn, this, arguments );
+   };
+   rbcMarkProfiledFunction( wrapped );
+   return wrapped;
+}
+
+function rbcMarkProfiledFunction( fn )
+{
+   rbcProfiledFunctions.push( fn );
+}
+
+function rbcIsProfiledFunction( fn )
+{
+   for ( var i = 0; i < rbcProfiledFunctions.length; ++i )
+      if ( rbcProfiledFunctions[ i ] === fn )
+         return true;
+   return false;
 }
 
 function rbcIsAbortRequested()
@@ -487,9 +785,36 @@ function rbcFormatDuration( milliseconds )
    return format( "%d min %.1f s", minutes, seconds );
 }
 
+function rbcFormatPreciseDuration( milliseconds )
+{
+   if ( milliseconds >= 60000 )
+      return format( "%.2f min", milliseconds / 60000 );
+   if ( milliseconds >= 1000 )
+      return format( "%.3f s", milliseconds / 1000 );
+   if ( milliseconds >= 1 )
+      return format( "%.3f ms", milliseconds );
+   return format( "%.1f us", milliseconds * 1000 );
+}
+
 function rbcFormatMetric( value )
 {
    return value != 0 && Math.abs( value ) < 1.0e-6 ? format( "%g", value ) : format( "%.8f", value );
+}
+
+function rbcPadLeft( text, width )
+{
+   text = String( text );
+   while ( text.length < width )
+      text = " " + text;
+   return text;
+}
+
+function rbcPadRight( text, width )
+{
+   text = String( text );
+   while ( text.length < width )
+      text += " ";
+   return text;
 }
 
 function rbcLogProgress( message )
@@ -527,3 +852,18 @@ function rbcCreateProgressReporter( label, totalCount, bucketCount )
          rbcFormatDuration( rbcNowMilliseconds() - startTime ) ) );
    };
 }
+
+rbcGrayImageFromView = rbcWrapProfiledFunction( "utility.rbcGrayImageFromView", rbcGrayImageFromView );
+rbcCopyImage = rbcWrapProfiledFunction( "utility.rbcCopyImage", rbcCopyImage );
+rbcReadRow = rbcWrapProfiledFunction( "utility.rbcReadRow", rbcReadRow );
+rbcWriteRow = rbcWrapProfiledFunction( "utility.rbcWriteRow", rbcWriteRow );
+rbcInterpolateInvalidRows = rbcWrapProfiledFunction( "utility.rbcInterpolateInvalidRows", rbcInterpolateInvalidRows );
+rbcApplyThresholdToImage = rbcWrapProfiledFunction( "utility.rbcApplyThresholdToImage", rbcApplyThresholdToImage );
+rbcNormalizeImage = rbcWrapProfiledFunction( "utility.rbcNormalizeImage", rbcNormalizeImage );
+rbcWindowFromImage = rbcWrapProfiledFunction( "utility.rbcWindowFromImage", rbcWindowFromImage );
+rbcEstimateRobustLocation = rbcWrapProfiledFunction( "utility.rbcEstimateRobustLocation", rbcEstimateRobustLocation );
+rbcSmooth1D = rbcWrapProfiledFunction( "utility.rbcSmooth1D", rbcSmooth1D );
+rbcConvolve1D = rbcWrapProfiledFunction( "utility.rbcConvolve1D", rbcConvolve1D );
+rbcCreateGaussianKernel1D = rbcWrapProfiledFunction( "utility.rbcCreateGaussianKernel1D", rbcCreateGaussianKernel1D );
+rbcAbsQuantile = rbcWrapProfiledFunction( "utility.rbcAbsQuantile", rbcAbsQuantile );
+rbcRobustSigma = rbcWrapProfiledFunction( "utility.rbcRobustSigma", rbcRobustSigma );

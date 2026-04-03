@@ -10,224 +10,252 @@ function RowBandingCompensationEngine( parameters )
    this.execute = function( explicitTargetView )
    {
       var executionStart = rbcNowMilliseconds();
+      var executionProfile = rbcProfileEnter( "step", "Engine.execute" );
       rbcResetAbortState();
-      var targetView = this.resolveTargetView( explicitTargetView );
-      this.validateTargetView( targetView );
-
-      this.parameters.targetViewId = targetView.id;
-      this.parameters.ensureValid();
-
-      var starMaskView = rbcFindViewById( this.parameters.starMaskViewId );
-      var starsOnlyView = rbcFindViewById( this.parameters.starsOnlyViewId );
-
-      var originalImage = rbcGrayImageFromView( targetView );
-      var currentImage = rbcCopyImage( originalImage );
-      var targetId = targetView.id;
-
-      this.logExecutionContext( targetView, starMaskView, starsOnlyView );
-      console.writeln( "Abort support: use the console Pause/Abort button during processing." );
-      rbcLogProgress( format(
-         "Target geometry: %d x %d (%.2f MPix)",
-         originalImage.width,
-         originalImage.height,
-         (originalImage.width * originalImage.height) / 1000000 ) );
-      this.warnIfImageLooksNonLinear( originalImage );
-
-      if ( !this.parameters.enableRowTrendCorrection )
-         console.warningln( "<end><cbr>Row trend correction is disabled. The process will compute diagnostics but no effective row correction will be generated." );
-
-      if ( (this.parameters.enableStarInfluence || this.parameters.enableProtectionMask) && starMaskView == null && starsOnlyView == null )
-         console.warningln( "<end><cbr>No external star support image was provided. In v1, star-dependent features are disabled, so rowInfluence will be flat zero and no protection mask will be applied." );
-
-      var convergenceFloorSelected = this.parameters.enableConvergence &&
-         this.parameters.convergenceEpsilon <= RBC_CONVERGENCE_EPSILON_MIN;
-      if ( this.parameters.enableIterations )
+      try
       {
-         if ( !this.parameters.enableConvergence )
-            console.writeln( "Convergence stop: disabled; the full iteration count will be used." );
-         else if ( convergenceFloorSelected )
-            console.writeln( "Convergence stop: epsilon is at the 32-bit floor; early stop is suppressed and the full iteration count will be used." );
-      }
+         var targetView = this.resolveTargetView( explicitTargetView );
+         this.validateTargetView( targetView );
 
-      var iterations = this.parameters.enableIterations ? Math.max( 1, this.parameters.iterations ) : 1;
-      var previousResidual = null;
-      var previousResidualRms = null;
-      var consecutiveResidualRmsIncreaseCount = 0;
-      var finalMaskSet = null;
-      var finalProfileData = null;
-      var finalInfluence = this.profileEstimator.zeroProfile( currentImage.height );
-      var finalBackgroundModel = null;
+         this.parameters.targetViewId = targetView.id;
+         this.parameters.ensureValid();
 
-      for ( var iteration = 0; iteration < iterations; ++iteration )
-      {
-         rbcThrowIfAborted();
-         var iterationStart = rbcNowMilliseconds();
-         console.noteln( format( "<end><cbr>Iteration %d/%d", iteration + 1, iterations ) );
+         var starMaskView = rbcFindViewById( this.parameters.starMaskViewId );
+         var starsOnlyView = rbcFindViewById( this.parameters.starsOnlyViewId );
 
-         var rebuildMask = finalMaskSet == null || this.parameters.recomputeMasksEachIteration;
-         if ( rebuildMask )
+         var originalImage = rbcGrayImageFromView( targetView );
+         var currentImage = rbcCopyImage( originalImage );
+         var targetId = targetView.id;
+
+         this.logExecutionContext( targetView, starMaskView, starsOnlyView );
+         console.writeln( "Abort support: use the console Pause/Abort button during processing." );
+         rbcLogProgress( format(
+            "Target geometry: %d x %d (%.2f MPix)",
+            originalImage.width,
+            originalImage.height,
+            (originalImage.width * originalImage.height) / 1000000 ) );
+         this.warnIfImageLooksNonLinear( originalImage );
+
+         if ( !this.parameters.enableRowTrendCorrection )
+            console.warningln( "<end><cbr>Row trend correction is disabled. The process will compute diagnostics but no effective row correction will be generated." );
+
+         if ( (this.parameters.enableStarInfluence || this.parameters.enableProtectionMask) && starMaskView == null && starsOnlyView == null )
+            console.warningln( "<end><cbr>No external star support image was provided. In v1, star-dependent features are disabled, so rowInfluence will be flat zero and no protection mask will be applied." );
+
+         var convergenceFloorSelected = this.parameters.enableConvergence &&
+            this.parameters.convergenceEpsilon <= RBC_CONVERGENCE_EPSILON_MIN;
+         if ( this.parameters.enableIterations )
          {
-            if ( starMaskView != null || starsOnlyView != null )
-               rbcLogProgress( "Building star support masks..." );
-            finalMaskSet = this.maskBuilder.build( starMaskView, starsOnlyView );
-            if ( finalMaskSet.hasMask )
-               rbcLogProgress( "Star support masks ready." );
+            if ( !this.parameters.enableConvergence )
+               console.writeln( "Convergence stop: disabled; the full iteration count will be used." );
+            else if ( convergenceFloorSelected )
+               console.writeln( "Convergence stop: epsilon is at the 32-bit floor; early stop is suppressed and the full iteration count will be used." );
          }
 
-         var starAnalysis = (iteration == 0 || this.parameters.recomputeStarInfluenceEachIteration)
-            ? this.runTimedStep(
-               "Analyzing star support",
-               function()
-               {
-                  return this.starAnalyzer.analyze( finalMaskSet, currentImage.height );
-               }.bind( this ) )
-            : { starObjects: [], rowInfluence: finalInfluence, usedFallbackProfile: false };
+         var iterations = this.parameters.enableIterations ? Math.max( 1, this.parameters.iterations ) : 1;
+         var previousResidual = null;
+         var previousResidualRms = null;
+         var consecutiveResidualRmsIncreaseCount = 0;
+         var finalMaskSet = null;
+         var finalProfileData = null;
+         var finalInfluence = this.profileEstimator.zeroProfile( currentImage.height );
+         var finalBackgroundModel = null;
 
-         if ( iteration == 0 || this.parameters.recomputeStarInfluenceEachIteration )
+         for ( var iteration = 0; iteration < iterations; ++iteration )
          {
-            finalInfluence = starAnalysis.rowInfluence;
-            if ( this.parameters.enableStarInfluence )
+            var iterationProfile = rbcProfileEnter( "step", "Iteration" );
+            try
             {
-               if ( !finalMaskSet.hasMask )
-                  console.writeln( "Row influence profile: flat zero because no star support input is available." );
-               else if ( starAnalysis.usedFallbackProfile )
-                  console.writeln( "Detected star objects: 0; using mask-occupancy fallback influence profile." );
-               else
-                  console.writeln( "Detected star objects: " + starAnalysis.starObjects.length );
-            }
-         }
+               rbcThrowIfAborted();
+               var iterationStart = rbcNowMilliseconds();
+               console.noteln( format( "<end><cbr>Iteration %d/%d", iteration + 1, iterations ) );
 
-         finalBackgroundModel = null;
-         if ( this.parameters.enableSoftBackgroundModel )
-         {
-            finalBackgroundModel = this.runTimedStep(
-               "Building soft background model",
-               function()
+               var rebuildMask = finalMaskSet == null || this.parameters.recomputeMasksEachIteration;
+               if ( rebuildMask )
                {
-                  var model = new RowBandingCompensationBackgroundModel( this.parameters );
-                  model.build( currentImage, finalMaskSet.hasMask ? finalMaskSet.exclusionImage : null );
-                  return model;
-               }.bind( this ) );
-            rbcLogProgress( format(
-               "Soft background grid: %d x %d nodes at %d px.",
-               finalBackgroundModel.gridWidth,
-               finalBackgroundModel.gridHeight,
-               finalBackgroundModel.cellSize ) );
-         }
+                  finalMaskSet = this.runTimedStep(
+                     "Building star support masks",
+                     function()
+                     {
+                        return this.maskBuilder.build( starMaskView, starsOnlyView );
+                     }.bind( this ) );
+                  if ( finalMaskSet.hasMask )
+                     rbcLogProgress( "Star support masks ready." );
+               }
 
-         finalProfileData = this.runTimedStep(
-            "Estimating row profiles",
-            function()
-            {
-               return this.profileEstimator.estimate(
-                  currentImage,
-                  finalMaskSet.hasMask ? finalMaskSet.exclusionImage : null,
-                  finalBackgroundModel,
-                  finalInfluence );
-            }.bind( this ) );
+               var starAnalysis = (iteration == 0 || this.parameters.recomputeStarInfluenceEachIteration)
+                  ? this.runTimedStep(
+                     "Analyzing star support",
+                     function()
+                     {
+                        return this.starAnalyzer.analyze( finalMaskSet, currentImage.height );
+                     }.bind( this ) )
+                  : { starObjects: [], rowInfluence: finalInfluence, usedFallbackProfile: false };
 
-         console.writeln( "Rows with limited support: " + finalProfileData.insufficientRows );
-         var residualRms = this.profileRms( finalProfileData.rowResidual );
-         var residualRobustSigma = rbcRobustSigma( finalProfileData.rowResidual );
-         var residualAbsP95 = rbcAbsQuantile( finalProfileData.rowResidual, 0.95 );
-         var maxCorrection = rbcMaxAbs( finalProfileData.rowCorrection );
-         console.writeln( "Residual RMS: " + rbcFormatMetric( residualRms ) );
-         console.writeln( "Residual robust sigma: " + rbcFormatMetric( residualRobustSigma ) );
-         console.writeln( "Residual |95%| amplitude: " + rbcFormatMetric( residualAbsP95 ) );
-         console.writeln( "Max correction amplitude: " + rbcFormatMetric( maxCorrection ) );
-
-         var stopForDivergence = false;
-         if ( previousResidualRms != null )
-         {
-            if ( residualRms > previousResidualRms )
-            {
-               ++consecutiveResidualRmsIncreaseCount;
-               console.warningln(
-                  "<end><cbr>Residual RMS increased: " +
-                  rbcFormatMetric( previousResidualRms ) +
-                  " -> " +
-                  rbcFormatMetric( residualRms ) +
-                  format( " (%d/3 consecutive increases).", consecutiveResidualRmsIncreaseCount ) );
-               if ( consecutiveResidualRmsIncreaseCount >= 3 )
+               if ( iteration == 0 || this.parameters.recomputeStarInfluenceEachIteration )
                {
-                  console.warningln(
-                     "<end><cbr>Residual RMS has increased for 3 consecutive iterations. " +
-                     "Stopping early to avoid divergence. Reduce global correction strength and/or maximum per-iteration correction." );
-                  stopForDivergence = true;
+                  finalInfluence = starAnalysis.rowInfluence;
+                  if ( this.parameters.enableStarInfluence )
+                  {
+                     if ( !finalMaskSet.hasMask )
+                        console.writeln( "Row influence profile: flat zero because no star support input is available." );
+                     else if ( starAnalysis.usedFallbackProfile )
+                        console.writeln( "Detected star objects: 0; using mask-occupancy fallback influence profile." );
+                     else
+                        console.writeln( "Detected star objects: " + starAnalysis.starObjects.length );
+                  }
+               }
+
+               finalBackgroundModel = null;
+               if ( this.parameters.enableSoftBackgroundModel )
+               {
+                  finalBackgroundModel = this.runTimedStep(
+                     "Building soft background model",
+                     function()
+                     {
+                        var model = new RowBandingCompensationBackgroundModel( this.parameters );
+                        model.build( currentImage, finalMaskSet.hasMask ? finalMaskSet.exclusionImage : null );
+                        return model;
+                     }.bind( this ) );
+                  rbcLogProgress( format(
+                     "Soft background grid: %d x %d nodes at %d px.",
+                     finalBackgroundModel.gridWidth,
+                     finalBackgroundModel.gridHeight,
+                     finalBackgroundModel.cellSize ) );
+               }
+
+               finalProfileData = this.runTimedStep(
+                  "Estimating row profiles",
+                  function()
+                  {
+                     return this.profileEstimator.estimate(
+                        currentImage,
+                        finalMaskSet.hasMask ? finalMaskSet.exclusionImage : null,
+                        finalBackgroundModel,
+                        finalInfluence );
+                  }.bind( this ) );
+
+               console.writeln( "Rows with limited support: " + finalProfileData.insufficientRows );
+               var residualRms = this.profileRms( finalProfileData.rowResidual );
+               var residualRobustSigma = rbcRobustSigma( finalProfileData.rowResidual );
+               var residualAbsP95 = rbcAbsQuantile( finalProfileData.rowResidual, 0.95 );
+               var maxCorrection = rbcMaxAbs( finalProfileData.rowCorrection );
+               console.writeln( "Residual RMS: " + rbcFormatMetric( residualRms ) );
+               console.writeln( "Residual robust sigma: " + rbcFormatMetric( residualRobustSigma ) );
+               console.writeln( "Residual |95%| amplitude: " + rbcFormatMetric( residualAbsP95 ) );
+               console.writeln( "Max correction amplitude: " + rbcFormatMetric( maxCorrection ) );
+
+               var stopForDivergence = false;
+               if ( previousResidualRms != null )
+               {
+                  if ( residualRms > previousResidualRms )
+                  {
+                     ++consecutiveResidualRmsIncreaseCount;
+                     console.warningln(
+                        "<end><cbr>Residual RMS increased: " +
+                        rbcFormatMetric( previousResidualRms ) +
+                        " -> " +
+                        rbcFormatMetric( residualRms ) +
+                        format( " (%d/3 consecutive increases).", consecutiveResidualRmsIncreaseCount ) );
+                     if ( consecutiveResidualRmsIncreaseCount >= 3 )
+                     {
+                        console.warningln(
+                           "<end><cbr>Residual RMS has increased for 3 consecutive iterations. " +
+                           "Stopping early to avoid divergence. Reduce global correction strength and/or maximum per-iteration correction." );
+                        stopForDivergence = true;
+                     }
+                  }
+                  else
+                     consecutiveResidualRmsIncreaseCount = 0;
+               }
+
+               if ( stopForDivergence )
+               {
+                  finalProfileData.rowCorrection = this.profileEstimator.zeroProfile( finalProfileData.rowCorrection.length );
+                  rbcLogProgress( "Iteration time: " + rbcFormatDuration( rbcNowMilliseconds() - iterationStart ) );
+                  break;
+               }
+
+               if ( this.parameters.enableRowTrendCorrection )
+                  this.runTimedStep(
+                     "Applying row correction",
+                     function()
+                     {
+                        this.correctionApplier.apply(
+                           currentImage,
+                           finalProfileData.rowCorrection,
+                           this.parameters.enableProtectionMask && finalMaskSet.hasMask ? finalMaskSet.protectionImage : null );
+                     }.bind( this ) );
+
+               var converged = false;
+               if ( previousResidual != null )
+               {
+                  var rmsChange = rbcRmsDifference( previousResidual, finalProfileData.rowResidual );
+                  console.writeln( "Residual RMS change: " + rbcFormatMetric( rmsChange ) );
+                  if ( this.parameters.enableConvergence && !convergenceFloorSelected )
+                     converged = rmsChange <= this.parameters.convergenceEpsilon &&
+                        residualAbsP95 <= this.parameters.convergenceEpsilon;
+               }
+               if ( this.parameters.enableConvergence &&
+                    !convergenceFloorSelected &&
+                    maxCorrection <= this.parameters.convergenceEpsilon &&
+                    residualAbsP95 <= this.parameters.convergenceEpsilon )
+                  converged = true;
+
+               previousResidual = finalProfileData.rowResidual.slice( 0 );
+               previousResidualRms = residualRms;
+               rbcLogProgress( "Iteration time: " + rbcFormatDuration( rbcNowMilliseconds() - iterationStart ) );
+               if ( converged )
+               {
+                  console.noteln( "Convergence criterion reached." );
+                  break;
                }
             }
-            else
-               consecutiveResidualRmsIncreaseCount = 0;
+            finally
+            {
+               rbcProfileLeave( iterationProfile );
+            }
          }
 
-         if ( stopForDivergence )
-         {
-            finalProfileData.rowCorrection = this.profileEstimator.zeroProfile( finalProfileData.rowCorrection.length );
-            rbcLogProgress( "Iteration time: " + rbcFormatDuration( rbcNowMilliseconds() - iterationStart ) );
-            break;
-         }
+         var correctedWindow = this.runTimedStep(
+            "Publishing corrected image",
+            function()
+            {
+               var window = rbcWindowFromImage( currentImage, targetId + "_RBC" );
+               window.show();
+               return window;
+            } );
 
-         if ( this.parameters.enableRowTrendCorrection )
+         if ( this.parameters.enableDiagnostics )
             this.runTimedStep(
-               "Applying row correction",
+               "Exporting diagnostic products",
                function()
                {
-                  this.correctionApplier.apply(
+                  this.diagnosticsExporter.exportIterationProducts(
+                     targetId,
                      currentImage,
-                     finalProfileData.rowCorrection,
-                     this.parameters.enableProtectionMask && finalMaskSet.hasMask ? finalMaskSet.protectionImage : null );
+                     originalImage,
+                     finalBackgroundModel,
+                     finalProfileData,
+                     finalInfluence );
                }.bind( this ) );
 
-         var converged = false;
-         if ( previousResidual != null )
-         {
-            var rmsChange = rbcRmsDifference( previousResidual, finalProfileData.rowResidual );
-            console.writeln( "Residual RMS change: " + rbcFormatMetric( rmsChange ) );
-            if ( this.parameters.enableConvergence && !convergenceFloorSelected )
-               converged = rmsChange <= this.parameters.convergenceEpsilon &&
-                  residualAbsP95 <= this.parameters.convergenceEpsilon;
-         }
-         if ( this.parameters.enableConvergence &&
-              !convergenceFloorSelected &&
-              maxCorrection <= this.parameters.convergenceEpsilon &&
-              residualAbsP95 <= this.parameters.convergenceEpsilon )
-            converged = true;
+         rbcThrowIfAborted();
+         rbcLogProgress( "Total execution time: " + rbcFormatDuration( rbcNowMilliseconds() - executionStart ) );
 
-         previousResidual = finalProfileData.rowResidual.slice( 0 );
-         previousResidualRms = residualRms;
-         rbcLogProgress( "Iteration time: " + rbcFormatDuration( rbcNowMilliseconds() - iterationStart ) );
-         if ( converged )
-         {
-            console.noteln( "Convergence criterion reached." );
-            break;
-         }
+         return {
+            targetView: targetView,
+            correctedWindow: correctedWindow,
+            profileData: finalProfileData,
+            rowInfluence: finalInfluence,
+            backgroundModel: finalBackgroundModel,
+            maskSet: finalMaskSet
+         };
       }
-
-      rbcLogProgress( "Publishing corrected image..." );
-      var correctedWindow = rbcWindowFromImage( currentImage, targetId + "_RBC" );
-      correctedWindow.show();
-
-      if ( this.parameters.enableDiagnostics )
-         rbcLogProgress( "Exporting diagnostic products..." );
-         this.diagnosticsExporter.exportIterationProducts(
-            targetId,
-            currentImage,
-            originalImage,
-            finalBackgroundModel,
-            finalProfileData,
-            finalInfluence );
-
-      rbcThrowIfAborted();
-      rbcLogProgress( "Total execution time: " + rbcFormatDuration( rbcNowMilliseconds() - executionStart ) );
-
-      return {
-         targetView: targetView,
-         correctedWindow: correctedWindow,
-         profileData: finalProfileData,
-         rowInfluence: finalInfluence,
-         backgroundModel: finalBackgroundModel,
-         maskSet: finalMaskSet
-      };
+      finally
+      {
+         rbcProfileLeave( executionProfile );
+      }
    };
 
    this.resolveTargetView = function( explicitTargetView )
@@ -296,8 +324,16 @@ function RowBandingCompensationEngine( parameters )
    {
       var start = rbcNowMilliseconds();
       rbcLogProgress( label + "..." );
-      var result = callback();
+      var result = rbcProfileBlock( "step", label, callback );
       rbcLogProgress( label + " completed in " + rbcFormatDuration( rbcNowMilliseconds() - start ) + "." );
       return result;
    };
+
+   rbcWrapProfiledMethod( this, "execute", "Engine.execute" );
+   rbcWrapProfiledMethod( this, "resolveTargetView", "Engine.resolveTargetView" );
+   rbcWrapProfiledMethod( this, "validateTargetView", "Engine.validateTargetView" );
+   rbcWrapProfiledMethod( this, "warnIfImageLooksNonLinear", "Engine.warnIfImageLooksNonLinear" );
+   rbcWrapProfiledMethod( this, "logExecutionContext", "Engine.logExecutionContext" );
+   rbcWrapProfiledMethod( this, "profileRms", "Engine.profileRms" );
+   rbcWrapProfiledMethod( this, "runTimedStep", "Engine.runTimedStep" );
 }

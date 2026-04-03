@@ -61,6 +61,10 @@ var RBC_TOOLTIPS = {
       "<p>Enables creation of optional diagnostic views. Use this while tuning the process or validating behavior on new datasets.</p>" +
       "<p>Disable diagnostics for routine use to reduce clutter and execution overhead.</p>",
 
+   outputProfilingSummary:
+      "<p>Prints the internal execution profiling summary at the end of processing.</p>" +
+      "<p>The measurements are always collected internally; this option only controls whether the summary is disclosed in the console.</p>",
+
    maskThreshold:
       "<p>Threshold used to convert the external mask or stars-only image into an internal binary support map.</p>" +
       "<p>Higher values restrict the mask to brighter cores; lower values include more halos and small stars. Too low a value can remove too much background support.</p>",
@@ -297,6 +301,7 @@ function RowBandingCompensationParameters()
       this.outputSoftBackgroundModel = false;
       this.outputWorkingImage = false;
       this.outputDifferenceImage = true;
+      this.outputProfilingSummary = false;
       this.outputRowBackgroundPlot = false;
       this.outputRowTrendPlot = false;
       this.outputRowResidualPlot = true;
@@ -463,6 +468,8 @@ function RowBandingCompensationParameters()
          this.outputWorkingImage = Parameters.getBoolean( "outputWorkingImage" );
       if ( Parameters.has( "outputDifferenceImage" ) )
          this.outputDifferenceImage = Parameters.getBoolean( "outputDifferenceImage" );
+      if ( Parameters.has( "outputProfilingSummary" ) )
+         this.outputProfilingSummary = Parameters.getBoolean( "outputProfilingSummary" );
       if ( Parameters.has( "outputRowBackgroundPlot" ) )
          this.outputRowBackgroundPlot = Parameters.getBoolean( "outputRowBackgroundPlot" );
       if ( Parameters.has( "outputRowTrendPlot" ) )
@@ -542,6 +549,7 @@ function RowBandingCompensationParameters()
       Parameters.set( "outputSoftBackgroundModel", this.outputSoftBackgroundModel );
       Parameters.set( "outputWorkingImage", this.outputWorkingImage );
       Parameters.set( "outputDifferenceImage", this.outputDifferenceImage );
+      Parameters.set( "outputProfilingSummary", this.outputProfilingSummary );
       Parameters.set( "outputRowBackgroundPlot", this.outputRowBackgroundPlot );
       Parameters.set( "outputRowTrendPlot", this.outputRowTrendPlot );
       Parameters.set( "outputRowResidualPlot", this.outputRowResidualPlot );

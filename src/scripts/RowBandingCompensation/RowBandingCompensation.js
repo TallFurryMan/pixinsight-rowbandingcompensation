@@ -55,14 +55,23 @@ function main()
    function executeEngine( engine, targetView )
    {
       var abortEnabledBackup = console.abortEnabled;
+      var executionStatus = "completed";
       console.abortEnabled = true;
       rbcResetAbortState();
+      rbcSetProfilingOutputEnabled( parameters.outputProfilingSummary );
+      rbcBeginProfilingSession( TITLE + " " + VERSION );
       try
       {
          engine.execute( targetView );
       }
+      catch ( error )
+      {
+         executionStatus = rbcIsAbortError( error ) ? "aborted" : "failed";
+         throw error;
+      }
       finally
       {
+         rbcFinishProfilingSession( executionStatus );
          console.abortEnabled = abortEnabledBackup;
       }
    }
