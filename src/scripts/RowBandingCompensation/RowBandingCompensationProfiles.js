@@ -495,38 +495,85 @@ function RowBandingCompensationCorrectionApplier( parameters )
 {
    this.parameters = parameters;
 
+   this.applyCorrectionToRow = function( row, correction )
+   {
+      for ( var x = 0; x < row.length; ++x )
+         row[ x ] -= correction;
+   };
+
+   this.applyCorrectionToRowClampLow = function( row, correction )
+   {
+      for ( var x = 0; x < row.length; ++x )
+         row[ x ] = Math.max( 0, row[ x ] - correction );
+   };
+
+   this.applyCorrectionToRowClamp01 = function( row, correction )
+   {
+      for ( var x = 0; x < row.length; ++x )
+         row[ x ] = rbcClamp( row[ x ] - correction, 0, 1 );
+   };
+
+   this.applyCorrectionToRowWithProtection = function( row, correction, protectionRow, protectionStrength )
+   {
+      for ( var x = 0; x < row.length; ++x )
+         row[ x ] -= correction * (1 - protectionStrength * rbcClamp( protectionRow[ x ], 0, 1 ));
+   };
+
+   this.applyCorrectionToRowWithProtectionClampLow = function( row, correction, protectionRow, protectionStrength )
+   {
+      for ( var x = 0; x < row.length; ++x )
+         row[ x ] = Math.max( 0, row[ x ] - correction * (1 - protectionStrength * rbcClamp( protectionRow[ x ], 0, 1 )) );
+   };
+
+   this.applyCorrectionToRowWithProtectionClamp01 = function( row, correction, protectionRow, protectionStrength )
+   {
+      for ( var x = 0; x < row.length; ++x )
+         row[ x ] = rbcClamp( row[ x ] - correction * (1 - protectionStrength * rbcClamp( protectionRow[ x ], 0, 1 )), 0, 1 );
+   };
+
    this.apply = function( image, rowCorrection, protectionImage )
    {
       var progress = rbcCreateProgressReporter( "  Applying correction", image.height, 5 );
       var row = rbcCreateRowBuffer( image.width );
-      var protectionRow = protectionImage != null ? rbcCreateRowBuffer( image.width ) : null;
+      var useProtection = this.parameters.enableProtectionMask && protectionImage != null;
+      var protectionRow = useProtection ? rbcCreateRowBuffer( image.width ) : null;
+      var clippingPolicy = this.parameters.clippingPolicy;
+      var protectionStrength = this.parameters.protectionStrength;
+
       for ( var y = 0; y < image.height; ++y )
       {
          rbcThrowIfAborted();
          row = rbcReadRow( image, y, row );
-         if ( protectionImage != null )
+         if ( useProtection )
             protectionRow = rbcReadRow( protectionImage, y, protectionRow );
-         else
-            protectionRow = null;
 
-         for ( var x = 0; x < row.length; ++x )
+         var correction = rowCorrection[ y ];
+         if ( useProtection )
          {
-            var weight = 1;
-            if ( this.parameters.enableProtectionMask && protectionRow != null )
-               weight = 1 - this.parameters.protectionStrength * rbcClamp( protectionRow[ x ], 0, 1 );
-
-            row[ x ] -= rowCorrection[ y ] * weight;
-
-            if ( this.parameters.clippingPolicy == "ClampLow" )
-               row[ x ] = Math.max( 0, row[ x ] );
-            else if ( this.parameters.clippingPolicy == "Clamp01" )
-               row[ x ] = rbcClamp( row[ x ], 0, 1 );
+            if ( clippingPolicy == "ClampLow" )
+               this.applyCorrectionToRowWithProtectionClampLow( row, correction, protectionRow, protectionStrength );
+            else if ( clippingPolicy == "Clamp01" )
+               this.applyCorrectionToRowWithProtectionClamp01( row, correction, protectionRow, protectionStrength );
+            else
+               this.applyCorrectionToRowWithProtection( row, correction, protectionRow, protectionStrength );
          }
+         else if ( clippingPolicy == "ClampLow" )
+            this.applyCorrectionToRowClampLow( row, correction );
+         else if ( clippingPolicy == "Clamp01" )
+            this.applyCorrectionToRowClamp01( row, correction );
+         else
+            this.applyCorrectionToRow( row, correction );
 
          rbcWriteRow( image, y, row );
          progress( y + 1 );
       }
    };
 
+   rbcWrapProfiledMethod( this, "applyCorrectionToRow", "CorrectionApplier.applyCorrectionToRow" );
+   rbcWrapProfiledMethod( this, "applyCorrectionToRowClampLow", "CorrectionApplier.applyCorrectionToRowClampLow" );
+   rbcWrapProfiledMethod( this, "applyCorrectionToRowClamp01", "CorrectionApplier.applyCorrectionToRowClamp01" );
+   rbcWrapProfiledMethod( this, "applyCorrectionToRowWithProtection", "CorrectionApplier.applyCorrectionToRowWithProtection" );
+   rbcWrapProfiledMethod( this, "applyCorrectionToRowWithProtectionClampLow", "CorrectionApplier.applyCorrectionToRowWithProtectionClampLow" );
+   rbcWrapProfiledMethod( this, "applyCorrectionToRowWithProtectionClamp01", "CorrectionApplier.applyCorrectionToRowWithProtectionClamp01" );
    rbcWrapProfiledMethod( this, "apply", "CorrectionApplier.apply" );
 }
