@@ -36,9 +36,12 @@ Before using it, configure the GitHub repository's Pages source to `GitHub Actio
 Release sequence:
 
 ```sh
-git tag 1.0
+tools/set-version.sh 1.1
+git add src/scripts/RowBandingCompensation/RowBandingCompensation.js src/scripts/RowBandingCompensation/change-log.txt
+git commit -m "chore: release 1.1.0"
+git tag 1.1
 git push github main
-git push github 1.0
+git push github 1.1
 ```
 
 After the workflow completes, the PixInsight repository URL is expected to be:
@@ -56,6 +59,8 @@ tools/build-pixinsight-repository.sh 1.0 repository
 ```
 
 The builder verifies that the tag version matches the `VERSION` directive in `RowBandingCompensation.js`, creates the package tarball, computes its SHA1 checksum, and writes `updates.xri`.
+
+This version check is intentional. PixInsight displays the script `VERSION` value, so a release tag must not publish a different version than the script advertises. Short release tags are allowed: `1.1` is normalized to `1.1.0` for comparison with the script metadata.
 
 ## Signing
 
