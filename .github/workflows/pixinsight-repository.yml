@@ -1,11 +1,9 @@
-name: Build PixInsight Repository
+name: Publish PixInsight Repository
 
 on:
-  push:
-    tags:
-      - "[0-9]*"
-      - "v[0-9]*"
-      - "V[0-9]*"
+  release:
+    types:
+      - published
   workflow_dispatch:
     inputs:
       tag:
@@ -17,18 +15,18 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
-  group: pixinsight-pages
+  group: pixinsight-repository
   cancel-in-progress: false
 
 jobs:
-  build:
-    name: Build repository files
+  publish:
+    name: Build and publish repository files
     runs-on: ubuntu-latest
+    env:
+      RELEASE_TAG: ${{ github.event_name == 'release' && github.event.release.tag_name || inputs.tag }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
@@ -36,23 +34,37 @@ jobs:
           fetch-depth: 0
 
       - name: Build PixInsight update repository
+        run: tools/build-pixinsight-repository.sh "${RELEASE_TAG}" repository
+
+      - name: Publish to gh-pages branch
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          TAG_NAME="${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}"
-          tools/build-pixinsight-repository.sh "${TAG_NAME}" repository
+          set -euo pipefail
 
-      - name: Upload GitHub Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: repository
+          PAGES_DIR="$(mktemp -d)"
+          git init "${PAGES_DIR}"
+          cd "${PAGES_DIR}"
 
-  deploy:
-    name: Deploy GitHub Pages repository
-    runs-on: ubuntu-latest
-    needs: build
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy PixInsight repository
-        id: deployment
-        uses: actions/deploy-pages@v4
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote add origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+
+          if git ls-remote --exit-code --heads origin gh-pages >/dev/null 2>&1; then
+            git fetch --depth=1 origin gh-pages:gh-pages
+            git checkout gh-pages
+            find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          else
+            git checkout --orphan gh-pages
+          fi
+
+          cp -R "${GITHUB_WORKSPACE}/repository/." .
+          git add -A
+
+          if git diff --cached --quiet; then
+            echo "No repository changes to publish."
+            exit 0
+          fi
+
+          git commit -m "Deploy PixInsight repository for ${RELEASE_TAG}"
+          git push origin HEAD:gh-pages

@@ -29,9 +29,9 @@ The package is declared for PixInsight `1.9.3:1.9.9999`, because the script has 
 
 ## GitHub Pages Release
 
-The workflow in `.github/workflows/pixinsight-repository.yml` runs when a numeric release tag is pushed. Tags can use `1`, `1.0`, or `1.0.0` style versioning, with an optional leading `v`. The repository builder normalizes these forms for comparison with the script `VERSION` directive.
+The workflow in `.github/workflows/pixinsight-repository.yml` runs when a GitHub Release is published. Release tags can use `1`, `1.0`, or `1.0.0` style versioning, with an optional leading `v`. The repository builder normalizes these forms for comparison with the script `VERSION` directive.
 
-Before using it, configure the GitHub repository's Pages source to `GitHub Actions`.
+Before using it, configure the GitHub repository's Pages source to `Deploy from a branch`, with branch `gh-pages` and folder `/ (root)`. This avoids the protected `github-pages` deployment environment used by `actions/deploy-pages`.
 
 Release sequence:
 
@@ -42,6 +42,12 @@ git commit -m "chore: release 1.1.0"
 git tag 1.1
 git push github main
 git push github 1.1
+```
+
+Then publish a GitHub Release for tag `1.1` from the GitHub web interface, or with GitHub CLI:
+
+```sh
+gh release create 1.1 --title "1.1" --notes "RowBandingCompensation 1.1"
 ```
 
 After the workflow completes, the PixInsight repository URL is expected to be:

@@ -65,7 +65,7 @@ The script is exposed through `#feature-id` under `Utilities > RowBandingCompens
 
 Tagged releases are packaged by the GitHub Actions workflow in [`.github/workflows/pixinsight-repository.yml`](.github/workflows/pixinsight-repository.yml). The workflow builds a PixInsight update repository with `updates.xri` and a `tar.gz` package containing the deployable `src/scripts/RowBandingCompensation` tree.
 
-After GitHub Pages is configured to deploy from GitHub Actions, update the script version with `tools/set-version.sh`, then push a numeric release tag such as `1.1` to publish the repository at:
+After GitHub Pages is configured to deploy from the `gh-pages` branch, update the script version with `tools/set-version.sh`, push a numeric release tag such as `1.1`, then publish a GitHub Release for that tag to publish the repository at:
 
 `https://tallfurryman.github.io/pixinsight-rowbandingcompensation/`
 
