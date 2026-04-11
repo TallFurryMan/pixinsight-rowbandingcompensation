@@ -1,6 +1,9 @@
 var RBC_ABORT_ERROR_MESSAGE = "abort";
 var RBC_PROFILE_SAMPLE_LIMIT = 4096;
 var rbcAbortNoticeShown = false;
+var rbcAbortDeferredMessageShown = false;
+var rbcAbortDeferredRequested = false;
+var rbcAbortMode = "immediate";
 var rbcProfiledFunctions = [];
 var rbcProfiler = {
    active: false,
@@ -208,6 +211,29 @@ rbcProfiler.reset();
 function rbcResetAbortState()
 {
    rbcAbortNoticeShown = false;
+   rbcAbortDeferredMessageShown = false;
+   rbcAbortDeferredRequested = false;
+   rbcAbortMode = "immediate";
+}
+
+function rbcSetAbortMode( mode )
+{
+   rbcAbortMode = mode != null ? mode : "immediate";
+}
+
+function rbcRequestDeferredAbort()
+{
+   rbcAbortDeferredRequested = true;
+   if ( !rbcAbortDeferredMessageShown )
+   {
+      console.warningln( "<end><cbr>Finishing the current iteration and publishing the current result before termination." );
+      rbcAbortDeferredMessageShown = true;
+   }
+}
+
+function rbcHasDeferredAbortRequest()
+{
+   return rbcAbortDeferredRequested;
 }
 
 function rbcCreateElapsedTimer()
@@ -326,6 +352,12 @@ function rbcThrowIfAborted()
    {
       console.warningln( "<end><cbr>Abort requested." );
       rbcAbortNoticeShown = true;
+   }
+
+   if ( rbcAbortMode == "finishIteration" )
+   {
+      rbcRequestDeferredAbort();
+      return;
    }
 
    throw new Error( RBC_ABORT_ERROR_MESSAGE );

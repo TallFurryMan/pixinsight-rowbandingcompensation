@@ -62,7 +62,10 @@ function main()
       rbcBeginProfilingSession( TITLE + " " + VERSION );
       try
       {
-         engine.execute( targetView );
+         var result = engine.execute( targetView );
+         if ( result != null && result.aborted )
+            executionStatus = "aborted";
+         return result;
       }
       catch ( error )
       {

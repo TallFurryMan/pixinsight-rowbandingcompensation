@@ -16,6 +16,7 @@ function RowBandingCompensationEngine( parameters )
       {
          var targetView = this.resolveTargetView( explicitTargetView );
          this.validateTargetView( targetView );
+         rbcSetAbortMode( "finishIteration" );
 
          this.parameters.targetViewId = targetView.id;
          this.parameters.ensureValid();
@@ -60,6 +61,7 @@ function RowBandingCompensationEngine( parameters )
          var finalProfileData = null;
          var finalInfluence = this.profileEstimator.zeroProfile( currentImage.height );
          var finalBackgroundModel = null;
+         var aborted = false;
 
          for ( var iteration = 0; iteration < iterations; ++iteration )
          {
@@ -67,6 +69,12 @@ function RowBandingCompensationEngine( parameters )
             try
             {
                rbcThrowIfAborted();
+               if ( rbcHasDeferredAbortRequest() && previousResidual != null )
+               {
+                  aborted = true;
+                  console.warningln( "<end><cbr>Abort request reached the iteration boundary. Publishing the current result without starting another iteration." );
+                  break;
+               }
                var iterationStart = rbcNowMilliseconds();
                console.noteln( format( "<end><cbr>Iteration %d/%d", iteration + 1, iterations ) );
 
@@ -210,6 +218,13 @@ function RowBandingCompensationEngine( parameters )
                   console.noteln( "Convergence criterion reached." );
                   break;
                }
+
+               if ( rbcHasDeferredAbortRequest() )
+               {
+                  console.warningln( "<end><cbr>Abort request reached the iteration boundary. Stopping iterative processing and publishing the current result." );
+                  aborted = true;
+                  break;
+               }
             }
             finally
             {
@@ -226,21 +241,41 @@ function RowBandingCompensationEngine( parameters )
                return window;
             } );
 
-         if ( this.parameters.enableDiagnostics )
-            this.runTimedStep(
-               "Exporting diagnostic products",
-               function()
+         if ( rbcHasDeferredAbortRequest() )
+         {
+            aborted = true;
+            console.warningln( "<end><cbr>Abort request acknowledged. The current result has been published; skipping remaining optional work." );
+         }
+         else if ( this.parameters.enableDiagnostics )
+         {
+            rbcSetAbortMode( "immediate" );
+            try
+            {
+               this.runTimedStep(
+                  "Exporting diagnostic products",
+                  function()
+                  {
+                     this.diagnosticsExporter.exportIterationProducts(
+                        targetId,
+                        currentImage,
+                        originalImage,
+                        finalBackgroundModel,
+                        finalProfileData,
+                        finalInfluence );
+                  }.bind( this ) );
+            }
+            catch ( error )
+            {
+               if ( rbcIsAbortError( error ) )
                {
-                  this.diagnosticsExporter.exportIterationProducts(
-                     targetId,
-                     currentImage,
-                     originalImage,
-                     finalBackgroundModel,
-                     finalProfileData,
-                     finalInfluence );
-               }.bind( this ) );
+                  aborted = true;
+                  console.warningln( "<end><cbr>Abort requested while exporting diagnostics. The corrected image has already been published." );
+               }
+               else
+                  throw error;
+            }
+         }
 
-         rbcThrowIfAborted();
          rbcLogProgress( "Total execution time: " + rbcFormatDuration( rbcNowMilliseconds() - executionStart ) );
 
          return {
@@ -249,11 +284,13 @@ function RowBandingCompensationEngine( parameters )
             profileData: finalProfileData,
             rowInfluence: finalInfluence,
             backgroundModel: finalBackgroundModel,
-            maskSet: finalMaskSet
+            maskSet: finalMaskSet,
+            aborted: aborted
          };
       }
       finally
       {
+         rbcSetAbortMode( "immediate" );
          rbcProfileLeave( executionProfile );
       }
    };
