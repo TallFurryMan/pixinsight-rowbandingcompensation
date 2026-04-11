@@ -1,5 +1,7 @@
 # pixinsight-rowbandingcompensation
 
+**Pixinsight Update Repository: https://tallfurryman.github.io/pixinsight-rowbandingcompensation/**
+
 PixInsight PJSR resource package for conservative horizontal row-banding compensation on linear monochrome subframes whose residual banding is still aligned with image rows.
 
 This script was designed and implemented to fix the banding on the Atik camera Horizon II, introduced by high gain and saturated stars. The symptom is very similar to Canon banding, for which script CanonBandingReduction was designed, with slightly different causes.
