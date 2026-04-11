@@ -29,16 +29,16 @@ The package is declared for PixInsight `1.9.3:1.9.9999`, because the script has 
 
 ## GitHub Pages Release
 
-The workflow in `.github/workflows/pixinsight-repository.yml` runs when a tag matching `v*` is pushed. It builds the PixInsight repository directory and publishes it with GitHub Pages.
+The workflow in `.github/workflows/pixinsight-repository.yml` runs when a numeric release tag is pushed. Tags can use `1`, `1.0`, or `1.0.0` style versioning, with an optional leading `v`. The repository builder normalizes these forms for comparison with the script `VERSION` directive.
 
 Before using it, configure the GitHub repository's Pages source to `GitHub Actions`.
 
 Release sequence:
 
 ```sh
-git tag v1.0.0
+git tag 1.0
 git push github main
-git push github v1.0.0
+git push github 1.0
 ```
 
 After the workflow completes, the PixInsight repository URL is expected to be:
@@ -52,7 +52,7 @@ Use the trailing slash when registering the repository in PixInsight to avoid an
 For a manual local build of the same repository structure:
 
 ```sh
-tools/build-pixinsight-repository.sh v1.0.0 repository
+tools/build-pixinsight-repository.sh 1.0 repository
 ```
 
 The builder verifies that the tag version matches the `VERSION` directive in `RowBandingCompensation.js`, creates the package tarball, computes its SHA1 checksum, and writes `updates.xri`.

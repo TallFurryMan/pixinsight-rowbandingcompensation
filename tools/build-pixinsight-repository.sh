@@ -13,7 +13,7 @@ Usage: $0 <tag> [output-directory]
 Build a PixInsight update repository directory for a tagged release.
 
 Arguments:
-  tag               Git tag to package, for example v1.0.0.
+  tag               Git tag to package, for example 1.0.0.
   output-directory  Destination repository directory. Defaults to ./repository.
 
 The output directory will contain:
@@ -41,19 +41,54 @@ if [ -z "${TAG}" ]; then
 fi
 
 if ! git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null; then
-  echo "error: tag '${TAG}' does not exist" >&2
-  exit 1
+   echo "error: tag '${TAG}' does not exist" >&2
+   exit 1
 fi
 
+normalize_semver() {
+  local value="$1"
+  local core build prerelease major minor patch extra
+
+  value="${value#v}"
+  value="${value#V}"
+
+  if [[ ! "${value}" =~ ^[0-9]+(\.[0-9]+){0,2}(-[0-9A-Za-z]+(\.[0-9A-Za-z]+)*)?(\+[0-9A-Za-z]+(\.[0-9A-Za-z]+)*)?$ ]]; then
+    return 1
+  fi
+
+  core="${value}"
+  build=""
+  prerelease=""
+
+  if [[ "${core}" == *"+"* ]]; then
+    build="+${core#*+}"
+    core="${core%%+*}"
+  fi
+
+  if [[ "${core}" == *"-"* ]]; then
+    prerelease="-${core#*-}"
+    core="${core%%-*}"
+  fi
+
+  IFS="." read -r major minor patch extra <<< "${core}"
+  if [ -n "${extra:-}" ]; then
+    return 1
+  fi
+
+  minor="${minor:-0}"
+  patch="${patch:-0}"
+
+  printf "%s.%s.%s%s%s\n" "${major}" "${minor}" "${patch}" "${prerelease}" "${build}"
+}
+
 VERSION="${TAG#v}"
-case "${VERSION}" in
-  [0-9]*.[0-9]*.[0-9]*)
-    ;;
-  *)
-    echo "error: tag '${TAG}' must look like v<major>.<minor>.<patch>" >&2
-    exit 1
-    ;;
-esac
+VERSION="${VERSION#V}"
+NORMALIZED_VERSION="$(normalize_semver "${TAG}" || true)"
+
+if [ -z "${NORMALIZED_VERSION}" ]; then
+  echo "error: tag '${TAG}' must be semantic version-like: <major>, <major>.<minor>, or <major>.<minor>.<patch>, with optional leading v" >&2
+  exit 1
+fi
 
 SCRIPT_VERSION="$(
   git show "${TAG}:${PACKAGE_SOURCE_PATH}/${PACKAGE_ID}.js" \
@@ -66,8 +101,14 @@ if [ -z "${SCRIPT_VERSION}" ]; then
   exit 1
 fi
 
-if [ "${SCRIPT_VERSION}" != "${VERSION}" ]; then
-  echo "error: tag version ${VERSION} does not match script VERSION ${SCRIPT_VERSION}" >&2
+NORMALIZED_SCRIPT_VERSION="$(normalize_semver "${SCRIPT_VERSION}" || true)"
+if [ -z "${NORMALIZED_SCRIPT_VERSION}" ]; then
+  echo "error: script VERSION '${SCRIPT_VERSION}' is not semantic version-like" >&2
+  exit 1
+fi
+
+if [ "${NORMALIZED_SCRIPT_VERSION}" != "${NORMALIZED_VERSION}" ]; then
+  echo "error: tag version ${VERSION} normalizes to ${NORMALIZED_VERSION}, but script VERSION ${SCRIPT_VERSION} normalizes to ${NORMALIZED_SCRIPT_VERSION}" >&2
   exit 1
 fi
 
