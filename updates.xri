@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xri version="1.0">
+   <description>
+      <p>
+         RowBandingCompensation PixInsight update repository.
+      </p>
+      <p>
+         This repository provides a platform-independent PJSR script package for conservative horizontal row-banding compensation on linear monochrome images.
+      </p>
+   </description>
+   <platform os="all" arch="noarch" version="1.9.3:1.9.9999">
+      <package fileName="packages/RowBandingCompensation-1.1.tar.gz"
+               sha1="00f755d7fceecaee53aeedf4b53da62af60bb26f"
+               type="script"
+               releaseDate="20260411103548">
+         <title>
+            RowBandingCompensation 1.1
+         </title>
+         <remove>
+            src/scripts/RowBandingCompensation
+         </remove>
+         <description>
+            <p>
+               Installs RowBandingCompensation 1.1, a PixInsight JavaScript Runtime script for conservative horizontal row-banding compensation.
+            </p>
+            <p>
+               The package deploys the script source files under src/scripts/RowBandingCompensation. It is intended for monochrome linear frames whose residual banding remains visually horizontal.
+            </p>
+         </description>
+      </package>
+   </platform>
+</xri>
