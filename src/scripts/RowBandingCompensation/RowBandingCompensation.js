@@ -8,11 +8,11 @@
 #define __PJSR_USE_STAR_DETECTOR_V2
 
 #define TITLE "RowBandingCompensation"
-#define VERSION "1.0.0"
+#define VERSION "1.1.0"
 
 #feature-id RowBandingCompensation : Utilities > RowBandingCompensation
 
-#feature-info <b>RowBandingCompensation version 1.0.0</b><br/>\
+#feature-info <b>RowBandingCompensation version 1.1.0</b><br/>\
    <br/>\
    Conservative row-wise banding compensation for linear monochrome subframes, with optional star-guided modulation, \
    confidence weighting, iterative refinement and diagnostic outputs.<br/>\
