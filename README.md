@@ -61,6 +61,16 @@ That means:
 
 The script is exposed through `#feature-id` under `Utilities > RowBandingCompensation`.
 
+## PixInsight repository releases
+
+Tagged releases are packaged by the GitHub Actions workflow in [`.github/workflows/pixinsight-repository.yml`](.github/workflows/pixinsight-repository.yml). The workflow builds a PixInsight update repository with `updates.xri` and a `tar.gz` package containing the deployable `src/scripts/RowBandingCompensation` tree.
+
+After GitHub Pages is configured to deploy from GitHub Actions, pushing a tag such as `v1.0.0` publishes the repository at:
+
+`https://tallfurryman.github.io/pixinsight-rowbandingcompensation/`
+
+Release packaging and signing notes are documented in [doc/pixinsight-repository.md](doc/pixinsight-repository.md).
+
 ## Repository layout
 
 The implementation lives in:

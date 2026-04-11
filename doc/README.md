@@ -3,6 +3,7 @@
 This directory contains the v1 workflow documentation for the current PJSR implementation.
 
 - [`workflow.md`](./workflow.md): compact workflow description of the current PJSR script package, its computation stages, intermediate products, iteration logic, and diagnostics.
+- [`pixinsight-repository.md`](./pixinsight-repository.md): PixInsight update repository packaging, GitHub Pages publication, signing, and Certified PixInsight Developer registration notes.
 - [`assets/`](./assets): embedded SVG workflow diagrams.
 - [`diagram-data/`](./diagram-data): JSON source data for the SVG workflow diagrams.
 - [`diagram-preview.html`](./diagram-preview.html): browser preview page that animates both D3 force-settle passes.
