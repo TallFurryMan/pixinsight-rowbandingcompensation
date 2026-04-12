@@ -5,6 +5,7 @@ PACKAGE_ID="RowBandingCompensation"
 PACKAGE_SOURCE_PATH="src/scripts/${PACKAGE_ID}"
 MIN_PIXINSIGHT_VERSION="1.9.3"
 MAX_PIXINSIGHT_VERSION="1.9.9999"
+PROJECT_URL="https://github.com/TallFurryMan/pixinsight-rowbandingcompensation"
 
 usage() {
   cat <<EOF
@@ -190,6 +191,48 @@ cat > "${OUTPUT_PATH}/updates.xri" <<EOF
       </package>
    </platform>
 </xri>
+EOF
+
+cat > "${OUTPUT_PATH}/index.html" <<EOF
+<!doctype html>
+<html lang="en">
+<head>
+   <meta charset="utf-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1">
+   <meta http-equiv="refresh" content="0; url=${PROJECT_URL}">
+   <link rel="canonical" href="${PROJECT_URL}">
+   <title>${PACKAGE_ID} PixInsight Repository</title>
+   <style>
+      body {
+         font-family: ui-sans-serif, system-ui, sans-serif;
+         line-height: 1.5;
+         margin: 3rem auto;
+         max-width: 42rem;
+         padding: 0 1.5rem;
+      }
+      code {
+         background: #f3f4f6;
+         border-radius: 0.25rem;
+         padding: 0.1rem 0.25rem;
+      }
+   </style>
+</head>
+<body>
+   <h1>${PACKAGE_ID}</h1>
+   <p>
+      This is the PixInsight update repository endpoint for ${PACKAGE_ID}.
+      Browser visitors are redirected to the project README.
+   </p>
+   <p>
+      If redirection does not happen automatically, open
+      <a href="${PROJECT_URL}">${PROJECT_URL}</a>.
+   </p>
+   <p>
+      PixInsight should use this repository URL and retrieve <code>updates.xri</code>
+      directly from the same location.
+   </p>
+</body>
+</html>
 EOF
 
 cat <<EOF

@@ -20,10 +20,13 @@ src/
 The generated repository contains:
 
 ```text
+index.html
 updates.xri
 packages/
   RowBandingCompensation-<version>.tar.gz
 ```
+
+`index.html` is only a browser convenience page. It redirects human visitors from the GitHub Pages root to the project README on GitHub. The PixInsight-required paths, `updates.xri` and `packages/...`, remain direct files with no HTTP redirects.
 
 The package is declared for PixInsight `1.9.3:1.9.9999`, because the script has been validated against PixInsight 1.9.3 and has not yet been tested on older cores.
 
