@@ -65,6 +65,10 @@ var RBC_TOOLTIPS = {
       "<p>Prints the internal execution profiling summary at the end of processing.</p>" +
       "<p>The measurements are always collected internally; this option only controls whether the summary is disclosed in the console.</p>",
 
+   outputVerboseLogs:
+      "<p>Prints detailed step timing and progress messages while processing.</p>" +
+      "<p>Disable this for routine use. The console will then show one compact iteration metrics row per pass, plus warnings and stop reasons.</p>",
+
    maskThreshold:
       "<p>Threshold used to convert the external mask or stars-only image into an internal binary support map.</p>" +
       "<p>Higher values restrict the mask to brighter cores; lower values include more halos and small stars. Too low a value can remove too much background support.</p>",
@@ -302,6 +306,7 @@ function RowBandingCompensationParameters()
       this.outputWorkingImage = false;
       this.outputDifferenceImage = true;
       this.outputProfilingSummary = false;
+      this.outputVerboseLogs = false;
       this.outputRowBackgroundPlot = false;
       this.outputRowTrendPlot = false;
       this.outputRowResidualPlot = true;
@@ -470,6 +475,8 @@ function RowBandingCompensationParameters()
          this.outputDifferenceImage = Parameters.getBoolean( "outputDifferenceImage" );
       if ( Parameters.has( "outputProfilingSummary" ) )
          this.outputProfilingSummary = Parameters.getBoolean( "outputProfilingSummary" );
+      if ( Parameters.has( "outputVerboseLogs" ) )
+         this.outputVerboseLogs = Parameters.getBoolean( "outputVerboseLogs" );
       if ( Parameters.has( "outputRowBackgroundPlot" ) )
          this.outputRowBackgroundPlot = Parameters.getBoolean( "outputRowBackgroundPlot" );
       if ( Parameters.has( "outputRowTrendPlot" ) )
@@ -550,6 +557,7 @@ function RowBandingCompensationParameters()
       Parameters.set( "outputWorkingImage", this.outputWorkingImage );
       Parameters.set( "outputDifferenceImage", this.outputDifferenceImage );
       Parameters.set( "outputProfilingSummary", this.outputProfilingSummary );
+      Parameters.set( "outputVerboseLogs", this.outputVerboseLogs );
       Parameters.set( "outputRowBackgroundPlot", this.outputRowBackgroundPlot );
       Parameters.set( "outputRowTrendPlot", this.outputRowTrendPlot );
       Parameters.set( "outputRowResidualPlot", this.outputRowResidualPlot );

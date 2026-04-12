@@ -237,6 +237,8 @@ Operationally, the log should be interpreted together with a stretched inspectio
 - If `Residual |95%| amplitude` remains materially above the desired banding floor, lowering `convergenceEpsilon` or increasing the allowed iteration count is preferable to making a single pass more aggressive.
 - If residual RMS rises sequentially, the model is beginning to diverge even if some corrected rows still look plausible by eye.
 
+By default, the console prints a compact iteration table with residual RMS, residual `|95%|`, maximum correction amplitude, and convergence epsilon. Enabling debug verbose output restores the per-step progress log, including background sampling, row sampling, correction writeback, robust sigma, residual RMS change, and iteration timing.
+
 ## 7. PIDoc Migration Note
 
 The present document is intentionally structured so that a future PIDoc conversion can map sections almost directly:

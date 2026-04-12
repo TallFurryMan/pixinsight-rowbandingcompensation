@@ -614,6 +614,21 @@ In the current implementation, `rowResidual` and `rowVisibility` are rendered as
 - workingImage = currentImage - softBackgroundModel
 - differenceImage = correctedImage - originalImage
 
+### Console output
+
+The default console output should be compact during iteration:
+
+- one fixed-width metrics header
+- one row per iteration with iteration index, residual RMS, residual `|95%|`, maximum correction amplitude, and convergence epsilon
+- warnings and stop reasons as needed
+
+When verbose output is enabled, the script should also print:
+
+- per-step start and completion messages
+- progress checkpoints for background sampling, row sampling, and correction application
+- detailed residual statistics including robust sigma
+- residual RMS change and iteration timing
+
 ### Requirement
 
 Each diagnostic output should be individually enable-able.
@@ -681,6 +696,9 @@ Each diagnostic output should be individually enable-able.
 - outputRowVisibilityPlot
 - outputRowConfidencePlot
 - outputRowCorrectionPlot
+### Debug output
+- outputVerboseLogs
+- outputProfilingSummary
 
 ## Tooltip requirements
 
@@ -743,6 +761,8 @@ These are conservative defaults for v1:
 - maximumPerIterationCorrection = 0.02
 - iterations = 30
 - convergenceEpsilon = 5e-6
+- outputVerboseLogs = false
+- outputProfilingSummary = false
 
 ## Failure handling
 

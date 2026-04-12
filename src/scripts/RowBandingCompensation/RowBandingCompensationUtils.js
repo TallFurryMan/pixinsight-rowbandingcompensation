@@ -4,6 +4,7 @@ var rbcAbortNoticeShown = false;
 var rbcAbortDeferredMessageShown = false;
 var rbcAbortDeferredRequested = false;
 var rbcAbortMode = "immediate";
+var rbcVerboseOutputEnabled = false;
 var rbcProfiledFunctions = [];
 var rbcProfiler = {
    active: false,
@@ -219,6 +220,16 @@ function rbcResetAbortState()
 function rbcSetAbortMode( mode )
 {
    rbcAbortMode = mode != null ? mode : "immediate";
+}
+
+function rbcSetVerboseOutputEnabled( enabled )
+{
+   rbcVerboseOutputEnabled = enabled === true;
+}
+
+function rbcIsVerboseOutputEnabled()
+{
+   return rbcVerboseOutputEnabled;
 }
 
 function rbcRequestDeferredAbort()
@@ -975,9 +986,12 @@ function rbcPadRight( text, width )
 
 function rbcLogProgress( message )
 {
-   console.writeln( message );
-   if ( typeof console.flush == "function" )
-      console.flush();
+   if ( rbcVerboseOutputEnabled )
+   {
+      console.writeln( message );
+      if ( typeof console.flush == "function" )
+         console.flush();
+   }
    rbcThrowIfAborted();
 }
 

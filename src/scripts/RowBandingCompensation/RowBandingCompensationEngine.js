@@ -62,6 +62,10 @@ function RowBandingCompensationEngine( parameters )
          var finalInfluence = this.profileEstimator.zeroProfile( currentImage.height );
          var finalBackgroundModel = null;
          var aborted = false;
+         var verboseOutput = rbcIsVerboseOutputEnabled();
+
+         if ( !verboseOutput )
+            this.logIterationTableHeader();
 
          for ( var iteration = 0; iteration < iterations; ++iteration )
          {
@@ -76,7 +80,8 @@ function RowBandingCompensationEngine( parameters )
                   break;
                }
                var iterationStart = rbcNowMilliseconds();
-               console.noteln( format( "<end><cbr>Iteration %d/%d", iteration + 1, iterations ) );
+               if ( verboseOutput )
+                  console.noteln( format( "<end><cbr>Iteration %d/%d", iteration + 1, iterations ) );
 
                var rebuildMask = finalMaskSet == null || this.parameters.recomputeMasksEachIteration;
                if ( rebuildMask )
@@ -103,7 +108,7 @@ function RowBandingCompensationEngine( parameters )
                if ( iteration == 0 || this.parameters.recomputeStarInfluenceEachIteration )
                {
                   finalInfluence = starAnalysis.rowInfluence;
-                  if ( this.parameters.enableStarInfluence )
+                  if ( verboseOutput && this.parameters.enableStarInfluence )
                   {
                      if ( !finalMaskSet.hasMask )
                         console.writeln( "Row influence profile: flat zero because no star support input is available." );
@@ -143,15 +148,21 @@ function RowBandingCompensationEngine( parameters )
                         finalInfluence );
                   }.bind( this ) );
 
-               console.writeln( "Rows with limited support: " + finalProfileData.insufficientRows );
+               if ( verboseOutput )
+                  console.writeln( "Rows with limited support: " + finalProfileData.insufficientRows );
                var residualRms = this.profileRms( finalProfileData.rowResidual );
                var residualRobustSigma = rbcRobustSigma( finalProfileData.rowResidual );
                var residualAbsP95 = rbcAbsQuantile( finalProfileData.rowResidual, 0.95 );
                var maxCorrection = rbcMaxAbs( finalProfileData.rowCorrection );
-               console.writeln( "Residual RMS: " + rbcFormatMetric( residualRms ) );
-               console.writeln( "Residual robust sigma: " + rbcFormatMetric( residualRobustSigma ) );
-               console.writeln( "Residual |95%| amplitude: " + rbcFormatMetric( residualAbsP95 ) );
-               console.writeln( "Max correction amplitude: " + rbcFormatMetric( maxCorrection ) );
+               if ( verboseOutput )
+               {
+                  console.writeln( "Residual RMS: " + rbcFormatMetric( residualRms ) );
+                  console.writeln( "Residual robust sigma: " + rbcFormatMetric( residualRobustSigma ) );
+                  console.writeln( "Residual |95%| amplitude: " + rbcFormatMetric( residualAbsP95 ) );
+                  console.writeln( "Max correction amplitude: " + rbcFormatMetric( maxCorrection ) );
+               }
+               else
+                  this.logIterationTableRow( iteration + 1, iterations, residualRms, residualAbsP95, maxCorrection );
 
                var stopForDivergence = false;
                if ( previousResidualRms != null )
@@ -199,7 +210,8 @@ function RowBandingCompensationEngine( parameters )
                if ( previousResidual != null )
                {
                   var rmsChange = rbcRmsDifference( previousResidual, finalProfileData.rowResidual );
-                  console.writeln( "Residual RMS change: " + rbcFormatMetric( rmsChange ) );
+                  if ( verboseOutput )
+                     console.writeln( "Residual RMS change: " + rbcFormatMetric( rmsChange ) );
                   if ( this.parameters.enableConvergence && !convergenceFloorSelected )
                      converged = rmsChange <= this.parameters.convergenceEpsilon &&
                         residualAbsP95 <= this.parameters.convergenceEpsilon;
@@ -345,6 +357,37 @@ function RowBandingCompensationEngine( parameters )
       if ( this.parameters.enableConvergence )
          console.writeln( "Convergence epsilon: " + rbcFormatMetric( this.parameters.convergenceEpsilon ) );
       console.writeln( "Diagnostics enabled: " + this.parameters.enableDiagnostics );
+      console.writeln( "Verbose output: " + this.parameters.outputVerboseLogs );
+   };
+
+   this.logIterationTableHeader = function()
+   {
+      console.noteln( "<end><cbr>Iteration Summary" );
+      console.writeln(
+         rbcPadLeft( "#", 7 ) + "  " +
+         rbcPadLeft( "R_RMS", 13 ) + "  " +
+         rbcPadLeft( "q95", 13 ) + "  " +
+         rbcPadLeft( "max(C_k)", 13 ) + "  " +
+         rbcPadLeft( "epsilon", 13 ) );
+      console.writeln(
+         rbcPadLeft( "-------", 7 ) + "  " +
+         rbcPadLeft( "-------------", 13 ) + "  " +
+         rbcPadLeft( "-------------", 13 ) + "  " +
+         rbcPadLeft( "-------------", 13 ) + "  " +
+         rbcPadLeft( "-------------", 13 ) );
+   };
+
+   this.logIterationTableRow = function( iteration, iterations, residualRms, residualAbsP95, maxCorrection )
+   {
+      var epsilon = this.parameters.enableConvergence ? rbcFormatMetric( this.parameters.convergenceEpsilon ) : "disabled";
+      console.writeln(
+         rbcPadLeft( format( "%d/%d", iteration, iterations ), 7 ) + "  " +
+         rbcPadLeft( rbcFormatMetric( residualRms ), 13 ) + "  " +
+         rbcPadLeft( rbcFormatMetric( residualAbsP95 ), 13 ) + "  " +
+         rbcPadLeft( rbcFormatMetric( maxCorrection ), 13 ) + "  " +
+         rbcPadLeft( epsilon, 13 ) );
+      if ( typeof console.flush == "function" )
+         console.flush();
    };
 
    this.profileRms = function( profile )
@@ -371,6 +414,8 @@ function RowBandingCompensationEngine( parameters )
    rbcWrapProfiledMethod( this, "validateTargetView", "Engine.validateTargetView" );
    rbcWrapProfiledMethod( this, "warnIfImageLooksNonLinear", "Engine.warnIfImageLooksNonLinear" );
    rbcWrapProfiledMethod( this, "logExecutionContext", "Engine.logExecutionContext" );
+   rbcWrapProfiledMethod( this, "logIterationTableHeader", "Engine.logIterationTableHeader" );
+   rbcWrapProfiledMethod( this, "logIterationTableRow", "Engine.logIterationTableRow" );
    rbcWrapProfiledMethod( this, "profileRms", "Engine.profileRms" );
    rbcWrapProfiledMethod( this, "runTimedStep", "Engine.runTimedStep" );
 }

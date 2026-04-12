@@ -403,9 +403,6 @@ function RowBandingCompensationDialog( parameters )
    this.outputDifferenceCheck = this.addCheckBoxRow( this.diagnosticsSection.control.sizer, "Output difference image:", "outputDifferenceImage",
       function() { return dialog.parameters.outputDifferenceImage; },
       function( value ) { dialog.parameters.outputDifferenceImage = value; } );
-   this.outputProfilingSummaryCheck = this.addCheckBoxRow( this.diagnosticsSection.control.sizer, "Output profiling summary:", "outputProfilingSummary",
-      function() { return dialog.parameters.outputProfilingSummary; },
-      function( value ) { dialog.parameters.outputProfilingSummary = value; } );
    this.outputRowBackgroundCheck = this.addCheckBoxRow( this.diagnosticsSection.control.sizer, "Output row background plot:", "outputRowBackgroundPlot",
       function() { return dialog.parameters.outputRowBackgroundPlot; },
       function( value ) { dialog.parameters.outputRowBackgroundPlot = value; } );
@@ -427,6 +424,14 @@ function RowBandingCompensationDialog( parameters )
    this.outputRowCorrectionCheck = this.addCheckBoxRow( this.diagnosticsSection.control.sizer, "Output final correction plot:", "outputRowCorrectionPlot",
       function() { return dialog.parameters.outputRowCorrectionPlot; },
       function( value ) { dialog.parameters.outputRowCorrectionPlot = value; } );
+
+   this.debugSection = this.createSection( "Debug Output", null, null, null, true );
+   this.outputVerboseLogsCheck = this.addCheckBoxRow( this.debugSection.control.sizer, "Verbose output:", "outputVerboseLogs",
+      function() { return dialog.parameters.outputVerboseLogs; },
+      function( value ) { dialog.parameters.outputVerboseLogs = value; } );
+   this.outputProfilingSummaryCheck = this.addCheckBoxRow( this.debugSection.control.sizer, "Output profiling summary:", "outputProfilingSummary",
+      function() { return dialog.parameters.outputProfilingSummary; },
+      function( value ) { dialog.parameters.outputProfilingSummary = value; } );
 
    this.newInstanceButton = new ToolButton( this );
    this.newInstanceButton.icon = rbcScaledResource( this, ":/process-interface/new-instance.png" );
@@ -506,6 +511,8 @@ function RowBandingCompensationDialog( parameters )
    this.sizer.add( this.confidenceSection.control );
    this.sizer.add( this.diagnosticsSection.bar );
    this.sizer.add( this.diagnosticsSection.control );
+   this.sizer.add( this.debugSection.bar );
+   this.sizer.add( this.debugSection.control );
    this.sizer.add( this.buttonSizer );
 
    this.syncControlsFromParameters = function()
@@ -571,6 +578,7 @@ function RowBandingCompensationDialog( parameters )
       dialog.outputWorkingCheck.checked = dialog.parameters.outputWorkingImage;
       dialog.outputDifferenceCheck.checked = dialog.parameters.outputDifferenceImage;
       dialog.outputProfilingSummaryCheck.checked = dialog.parameters.outputProfilingSummary;
+      dialog.outputVerboseLogsCheck.checked = dialog.parameters.outputVerboseLogs;
       dialog.outputRowBackgroundCheck.checked = dialog.parameters.outputRowBackgroundPlot;
       dialog.outputRowTrendCheck.checked = dialog.parameters.outputRowTrendPlot;
       dialog.outputRowResidualCheck.checked = dialog.parameters.outputRowResidualPlot;

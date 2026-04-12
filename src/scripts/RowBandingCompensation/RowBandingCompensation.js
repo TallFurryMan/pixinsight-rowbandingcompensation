@@ -58,6 +58,7 @@ function main()
       var executionStatus = "completed";
       console.abortEnabled = true;
       rbcResetAbortState();
+      rbcSetVerboseOutputEnabled( parameters.outputVerboseLogs );
       rbcSetProfilingOutputEnabled( parameters.outputProfilingSummary );
       rbcBeginProfilingSession( TITLE + " " + VERSION );
       try
