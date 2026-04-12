@@ -166,6 +166,20 @@ function RowBandingCompensationDialog( parameters )
       dialog.convergenceExponentCombo.currentItem = Math.max( 0, RBC_CONVERGENCE_EXPONENTS.indexOf( convergence.exponent ) );
    };
 
+   this.applyUnboundedIterationMode = function()
+   {
+      dialog.parameters.enableConvergence = true;
+      dialog.parameters.iterations = 150;
+      dialog.parameters.convergenceEpsilon = RBC_CONVERGENCE_EPSILON_MIN;
+
+      if ( dialog.enableConvergenceCheck != null )
+         dialog.enableConvergenceCheck.checked = true;
+      if ( dialog.iterationsControl != null )
+         dialog.iterationsControl.setValue( dialog.parameters.iterations );
+      if ( dialog.convergenceMantissaControl != null && dialog.convergenceExponentCombo != null )
+         dialog.syncConvergenceControlsFromParameters();
+   };
+
    this.addViewSelector = function( parent, labelText, toolTipKey, required, valueGetter, valueSetter )
    {
       var row = dialog.createLabeledRow( parent, labelText, rbcTooltip( toolTipKey ) );
@@ -232,7 +246,12 @@ function RowBandingCompensationDialog( parameters )
 
    this.iterationSection = this.createSection( "Iteration Control", "enableIterations",
       function() { return dialog.parameters.enableIterations; },
-      function( value ) { dialog.parameters.enableIterations = value; },
+      function( value )
+      {
+         dialog.parameters.enableIterations = value;
+         if ( !value )
+            dialog.applyUnboundedIterationMode();
+      },
       false );
    this.enableConvergenceCheck = this.addCheckBoxRow( this.iterationSection.control.sizer, "Enable convergence stop:", "enableConvergence",
       function() { return dialog.parameters.enableConvergence; },
@@ -536,6 +555,9 @@ function RowBandingCompensationDialog( parameters )
       dialog.iterationSection.bar.checkBox.checked = dialog.parameters.enableIterations;
       dialog.enableConvergenceCheck.checked = dialog.parameters.enableConvergence;
       dialog.diagnosticsSection.bar.checkBox.checked = dialog.parameters.enableDiagnostics;
+
+      if ( !dialog.parameters.enableIterations )
+         dialog.applyUnboundedIterationMode();
 
       dialog.maskThresholdControl.setValue( dialog.parameters.maskThreshold );
       dialog.maskDilationControl.setValue( dialog.parameters.maskDilationRadius );

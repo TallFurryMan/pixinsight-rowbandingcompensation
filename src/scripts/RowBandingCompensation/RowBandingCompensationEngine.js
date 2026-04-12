@@ -29,7 +29,6 @@ function RowBandingCompensationEngine( parameters )
          var targetId = targetView.id;
 
          this.logExecutionContext( targetView, starMaskView, starsOnlyView );
-         console.writeln( "Abort support: use the console Pause/Abort button during processing." );
          rbcLogProgress( format(
             "Target geometry: %d x %d (%.2f MPix)",
             originalImage.width,
@@ -43,9 +42,13 @@ function RowBandingCompensationEngine( parameters )
          if ( (this.parameters.enableStarInfluence || this.parameters.enableProtectionMask) && starMaskView == null && starsOnlyView == null )
             console.warningln( "<end><cbr>No external star support image was provided. In v1, star-dependent features are disabled, so rowInfluence will be flat zero and no protection mask will be applied." );
 
+         var unboundedIterationMode = !this.parameters.enableIterations;
          var convergenceFloorSelected = this.parameters.enableConvergence &&
-            this.parameters.convergenceEpsilon <= RBC_CONVERGENCE_EPSILON_MIN;
-         if ( this.parameters.enableIterations )
+            this.parameters.convergenceEpsilon <= RBC_CONVERGENCE_EPSILON_MIN &&
+            !unboundedIterationMode;
+         if ( unboundedIterationMode )
+            console.warningln( "<end><cbr>Iteration Control is disabled: running unbounded convergence at epsilon 1e-9. Use Abort to finish the current iteration and publish the current result." );
+         else
          {
             if ( !this.parameters.enableConvergence )
                console.writeln( "Convergence stop: disabled; the full iteration count will be used." );
@@ -53,7 +56,7 @@ function RowBandingCompensationEngine( parameters )
                console.writeln( "Convergence stop: epsilon is at the 32-bit floor; early stop is suppressed and the full iteration count will be used." );
          }
 
-         var iterations = this.parameters.enableIterations ? Math.max( 1, this.parameters.iterations ) : 1;
+         var iterations = Math.max( 1, this.parameters.iterations );
          var previousResidual = null;
          var previousResidualRms = null;
          var consecutiveResidualRmsIncreaseCount = 0;
@@ -64,10 +67,9 @@ function RowBandingCompensationEngine( parameters )
          var aborted = false;
          var verboseOutput = rbcIsVerboseOutputEnabled();
 
-         if ( !verboseOutput )
-            this.logIterationTableHeader();
+         this.logIterationRunHeader( verboseOutput );
 
-         for ( var iteration = 0; iteration < iterations; ++iteration )
+         for ( var iteration = 0; unboundedIterationMode || iteration < iterations; ++iteration )
          {
             var iterationProfile = rbcProfileEnter( "step", "Iteration" );
             try
@@ -81,7 +83,7 @@ function RowBandingCompensationEngine( parameters )
                }
                var iterationStart = rbcNowMilliseconds();
                if ( verboseOutput )
-                  console.noteln( format( "<end><cbr>Iteration %d/%d", iteration + 1, iterations ) );
+                  console.noteln( "<end><cbr>" + this.formatIterationLabel( iteration + 1, iterations, unboundedIterationMode ) );
 
                var rebuildMask = finalMaskSet == null || this.parameters.recomputeMasksEachIteration;
                if ( rebuildMask )
@@ -162,7 +164,7 @@ function RowBandingCompensationEngine( parameters )
                   console.writeln( "Max correction amplitude: " + rbcFormatMetric( maxCorrection ) );
                }
                else
-                  this.logIterationTableRow( iteration + 1, iterations, residualRms, residualAbsP95, maxCorrection );
+                  this.logIterationTableRow( iteration + 1, iterations, unboundedIterationMode, residualRms, residualAbsP95, maxCorrection );
 
                var stopForDivergence = false;
                if ( previousResidualRms != null )
@@ -352,7 +354,7 @@ function RowBandingCompensationEngine( parameters )
       console.writeln( "Star mask view: " + (starMaskView != null ? starMaskView.id : "<none>") );
       console.writeln( "Stars-only view: " + (starsOnlyView != null ? starsOnlyView.id : "<none>") );
       console.writeln( "Soft background model: " + this.parameters.enableSoftBackgroundModel );
-      console.writeln( "Iterations enabled: " + this.parameters.enableIterations );
+      console.writeln( "Iteration mode: " + (this.parameters.enableIterations ? "bounded" : "unbounded convergence") );
       console.writeln( "Convergence stop enabled: " + this.parameters.enableConvergence );
       if ( this.parameters.enableConvergence )
          console.writeln( "Convergence epsilon: " + rbcFormatMetric( this.parameters.convergenceEpsilon ) );
@@ -360,32 +362,36 @@ function RowBandingCompensationEngine( parameters )
       console.writeln( "Verbose output: " + this.parameters.outputVerboseLogs );
    };
 
-   this.logIterationTableHeader = function()
+   this.logIterationRunHeader = function( verboseOutput )
    {
-      console.noteln( "<end><cbr>Iteration Summary" );
+      console.noteln( "<end><cbr>Abort support: use the console Pause/Abort button during processing. The current iteration will finish and publish its result." );
+      if ( verboseOutput )
+         return;
+
       console.writeln(
-         rbcPadLeft( "#", 7 ) + "  " +
-         rbcPadLeft( "R_RMS", 13 ) + "  " +
-         rbcPadLeft( "q95", 13 ) + "  " +
-         rbcPadLeft( "max(C_k)", 13 ) + "  " +
-         rbcPadLeft( "epsilon", 13 ) );
+         rbcPadLeft( "#", 12 ) + "  " +
+         rbcPadLeft( "Residual RMS", 13 ) + "  " +
+         rbcPadLeft( "Residual 95th", 13 ) + "  " +
+         rbcPadLeft( "max(C_k)", 13 ) );
       console.writeln(
-         rbcPadLeft( "-------", 7 ) + "  " +
-         rbcPadLeft( "-------------", 13 ) + "  " +
+         rbcPadLeft( "------------", 12 ) + "  " +
          rbcPadLeft( "-------------", 13 ) + "  " +
          rbcPadLeft( "-------------", 13 ) + "  " +
          rbcPadLeft( "-------------", 13 ) );
    };
 
-   this.logIterationTableRow = function( iteration, iterations, residualRms, residualAbsP95, maxCorrection )
+   this.formatIterationLabel = function( iteration, iterations, unboundedIterationMode )
    {
-      var epsilon = this.parameters.enableConvergence ? rbcFormatMetric( this.parameters.convergenceEpsilon ) : "disabled";
+      return unboundedIterationMode ? format( "Iteration %d/unbounded", iteration ) : format( "Iteration %d/%d", iteration, iterations );
+   };
+
+   this.logIterationTableRow = function( iteration, iterations, unboundedIterationMode, residualRms, residualAbsP95, maxCorrection )
+   {
       console.writeln(
-         rbcPadLeft( format( "%d/%d", iteration, iterations ), 7 ) + "  " +
+         rbcPadLeft( unboundedIterationMode ? format( "%d/unbounded", iteration ) : format( "%d/%d", iteration, iterations ), 12 ) + "  " +
          rbcPadLeft( rbcFormatMetric( residualRms ), 13 ) + "  " +
          rbcPadLeft( rbcFormatMetric( residualAbsP95 ), 13 ) + "  " +
-         rbcPadLeft( rbcFormatMetric( maxCorrection ), 13 ) + "  " +
-         rbcPadLeft( epsilon, 13 ) );
+         rbcPadLeft( rbcFormatMetric( maxCorrection ), 13 ) );
       if ( typeof console.flush == "function" )
          console.flush();
    };
@@ -414,7 +420,8 @@ function RowBandingCompensationEngine( parameters )
    rbcWrapProfiledMethod( this, "validateTargetView", "Engine.validateTargetView" );
    rbcWrapProfiledMethod( this, "warnIfImageLooksNonLinear", "Engine.warnIfImageLooksNonLinear" );
    rbcWrapProfiledMethod( this, "logExecutionContext", "Engine.logExecutionContext" );
-   rbcWrapProfiledMethod( this, "logIterationTableHeader", "Engine.logIterationTableHeader" );
+   rbcWrapProfiledMethod( this, "logIterationRunHeader", "Engine.logIterationRunHeader" );
+   rbcWrapProfiledMethod( this, "formatIterationLabel", "Engine.formatIterationLabel" );
    rbcWrapProfiledMethod( this, "logIterationTableRow", "Engine.logIterationTableRow" );
    rbcWrapProfiledMethod( this, "profileRms", "Engine.profileRms" );
    rbcWrapProfiledMethod( this, "runTimedStep", "Engine.runTimedStep" );

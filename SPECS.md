@@ -84,13 +84,23 @@ The interface should be organized into collapsible groups.
 - Optional stars-only view
 - Optional star mask view
 ### Iteration Control
-- Enable iterative processing from the section title
+- Enable bounded iteration control from the section title
 - Enable convergence stop
 - Convergence mantissa
 - Convergence exponent
 - Maximum number of iterations
 - Recompute masks each iteration
 - Recompute star influence each iteration
+
+When the section title checkbox is unchecked:
+
+- enter unbounded convergence mode
+- force convergence on
+- force convergence epsilon to the `1e-9` floor
+- set the displayed maximum iteration count to its upper bound
+- ignore the maximum iteration count at runtime
+- continue until convergence, divergence guard, or user abort
+- on abort, finish the current iteration and publish the current corrected result
 ### Star mask and object analysis
 - The section itself is not globally enable-able
 - Mask threshold
@@ -567,10 +577,17 @@ Stop early if:
 - RMS change in `rowResidual` is below `convergenceEpsilon` and the residual `|95%|` amplitude is also below `convergenceEpsilon`
 - or max correction amplitude is below `convergenceEpsilon` and the residual `|95%|` amplitude is also below `convergenceEpsilon`
 
-If `convergenceEpsilon` is set to the current floor (`1e-9` in the 32-bit working-image path):
+In bounded iteration mode, if `convergenceEpsilon` is set to the current floor (`1e-9` in the 32-bit working-image path):
 
 - suppress early-stop convergence entirely
 - use the iteration limit instead
+
+In unbounded convergence mode:
+
+- force `convergenceEpsilon = 1e-9`
+- use that floor as the active convergence target
+- ignore the configured iteration limit
+- rely on user abort if convergence is not reached in practical time
 
 If residual RMS increases for three consecutive iterations:
 
@@ -619,7 +636,7 @@ In the current implementation, `rowResidual` and `rowVisibility` are rendered as
 The default console output should be compact during iteration:
 
 - one fixed-width metrics header
-- one row per iteration with iteration index, residual RMS, residual `|95%|`, maximum correction amplitude, and convergence epsilon
+- one row per iteration with iteration index, residual RMS, residual `|95%|`, and maximum correction amplitude
 - warnings and stop reasons as needed
 
 When verbose output is enabled, the script should also print:

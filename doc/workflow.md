@@ -215,7 +215,7 @@ Each iteration reports:
 
 The current implementation stops early only when the remaining residual is small in amplitude as well as stable between iterations. This is stricter than a pure RMS-change criterion and better matches visible residual banding.
 
-The special floor case is deliberate: when `convergenceEpsilon = 1e-9` on the current 32-bit path, early convergence is suppressed and the run proceeds until the configured iteration limit or a divergence stop.
+The special floor case depends on the iteration mode. In bounded mode, when `convergenceEpsilon = 1e-9` on the current 32-bit path, early convergence is suppressed and the run proceeds until the configured iteration limit or a divergence stop. If the Iteration Control section is unchecked, the script instead enters unbounded convergence mode: convergence is forced on, epsilon is forced to `1e-9`, the iteration limit is ignored, and execution continues until convergence, divergence guard, or user abort.
 
 The divergence guard is also explicit. If residual RMS increases in three successive iterations, the script stops and advises reduction of `globalStrength` and/or `maximumPerIterationCorrection`.
 
@@ -237,7 +237,7 @@ Operationally, the log should be interpreted together with a stretched inspectio
 - If `Residual |95%| amplitude` remains materially above the desired banding floor, lowering `convergenceEpsilon` or increasing the allowed iteration count is preferable to making a single pass more aggressive.
 - If residual RMS rises sequentially, the model is beginning to diverge even if some corrected rows still look plausible by eye.
 
-By default, the console prints a compact iteration table with residual RMS, residual `|95%|`, maximum correction amplitude, and convergence epsilon. Enabling debug verbose output restores the per-step progress log, including background sampling, row sampling, correction writeback, robust sigma, residual RMS change, and iteration timing.
+By default, the console prints a compact iteration table with residual RMS, residual `|95%|`, and maximum correction amplitude. Enabling debug verbose output restores the per-step progress log, including background sampling, row sampling, correction writeback, robust sigma, residual RMS change, and iteration timing.
 
 ## 7. PIDoc Migration Note
 

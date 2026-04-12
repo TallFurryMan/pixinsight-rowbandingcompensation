@@ -50,12 +50,13 @@ var RBC_TOOLTIPS = {
       "<p>Stronger protection preserves stellar profiles better, but leaves more residual banding where stars dominate the row.</p>",
 
    enableIterations:
-      "<p>Runs several conservative passes instead of one aggressive pass. This is generally safer for weak banding defects.</p>" +
-      "<p>More iterations can converge more cleanly, but they also increase runtime and can slowly flatten real signal if parameters are too strong.</p>",
+      "<p>When checked, runs a bounded number of conservative passes controlled by the maximum iteration count and convergence options.</p>" +
+      "<p>When unchecked, switches to unbounded convergence mode: the maximum iteration count is ignored, convergence is forced on, and epsilon is set to the minimum 1e-9 floor. This can run indefinitely if the frame never reaches that floor.</p>" +
+      "<p>Use the console Pause/Abort button to stop an unbounded run. The current iteration will finish and the corrected frame produced so far will still be published.</p>",
 
    enableConvergence:
       "<p>Stops iterative processing early when the row residual no longer changes meaningfully.</p>" +
-      "<p>Disable this if you want the process to always run the full number of configured iterations, regardless of residual change.</p>",
+      "<p>Disable this if you want a bounded run to always use the full configured iteration count. In unbounded convergence mode, convergence is forced on at the minimum 1e-9 epsilon floor.</p>",
 
    enableDiagnostics:
       "<p>Enables creation of optional diagnostic views. Use this while tuning the process or validating behavior on new datasets.</p>" +
@@ -183,12 +184,14 @@ var RBC_TOOLTIPS = {
 
    iterations:
       "<p>Maximum number of conservative correction passes when iterative processing is enabled.</p>" +
-      "<p>Use higher values when the process is configured to converge gradually. More iterations increase runtime and can slowly accumulate bias if the model is too aggressive.</p>",
+      "<p>Use higher values when the process is configured to converge gradually. More iterations increase runtime and can slowly accumulate bias if the model is too aggressive.</p>" +
+      "<p>Ignored when the Iteration Control section is unchecked. In that unbounded mode, the script runs until convergence at epsilon 1e-9, or until you abort and publish the current corrected frame.</p>",
 
    convergenceEpsilon:
       "<p>Early-stop threshold for iterative convergence. The process requires both a small inter-iteration residual change and a small remaining row-residual amplitude before stopping early.</p>" +
       "<p>The value is edited as a mantissa and base-10 exponent, over a bounded range from 1e-9 to 1e-3. Smaller values force more iterations. Larger values stop earlier but may leave some correctable residual behind.</p>" +
-      "<p>On the current 32-bit working-image path, selecting the minimum floor intentionally suppresses early convergence and lets the maximum iteration count govern termination.</p>",
+      "<p>On bounded runs, selecting the minimum floor intentionally suppresses early convergence and lets the maximum iteration count govern termination.</p>" +
+      "<p>When Iteration Control is unchecked, this value is forced to 1e-9 and used as the actual convergence target for an unbounded run.</p>",
 
    recomputeMasksEachIteration:
       "<p>Rebuilds the internal exclusion and protection masks from the selected external star-support inputs after each pass.</p>" +
@@ -365,6 +368,12 @@ function RowBandingCompensationParameters()
 
       this.iterations = rbcClamp( Math.round( this.iterations ), 0, 150 );
       this.convergenceEpsilon = rbcClamp( this.convergenceEpsilon, RBC_CONVERGENCE_EPSILON_MIN, RBC_CONVERGENCE_EPSILON_MAX );
+      if ( !this.enableIterations )
+      {
+         this.enableConvergence = true;
+         this.iterations = 150;
+         this.convergenceEpsilon = RBC_CONVERGENCE_EPSILON_MIN;
+      }
    };
 
    this.importParameters = function()
