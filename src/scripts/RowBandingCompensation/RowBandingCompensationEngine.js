@@ -364,7 +364,8 @@ function RowBandingCompensationEngine( parameters )
 
    this.logIterationRunHeader = function( verboseOutput )
    {
-      console.noteln( "<end><cbr>Abort support: use the console Pause/Abort button during processing. The current iteration will finish and publish its result." );
+      console.noteln( "<end><cbr>Abort support: use the console Pause/Abort button during processing." );
+      console.noteln( "The current iteration will finish and publish its result." );
       if ( verboseOutput )
          return;
 
@@ -382,13 +383,13 @@ function RowBandingCompensationEngine( parameters )
 
    this.formatIterationLabel = function( iteration, iterations, unboundedIterationMode )
    {
-      return unboundedIterationMode ? format( "Iteration %d/unbounded", iteration ) : format( "Iteration %d/%d", iteration, iterations );
+      return unboundedIterationMode ? format( "Iteration %d/-", iteration ) : format( "Iteration %d/%d", iteration, iterations );
    };
 
    this.logIterationTableRow = function( iteration, iterations, unboundedIterationMode, residualRms, residualAbsP95, maxCorrection )
    {
       console.writeln(
-         rbcPadLeft( unboundedIterationMode ? format( "%d/unbounded", iteration ) : format( "%d/%d", iteration, iterations ), 12 ) + "  " +
+         rbcPadLeft( unboundedIterationMode ? format( "%d/-", iteration ) : format( "%d/%d", iteration, iterations ), 12 ) + "  " +
          rbcPadLeft( rbcFormatMetric( residualRms ), 13 ) + "  " +
          rbcPadLeft( rbcFormatMetric( residualAbsP95 ), 13 ) + "  " +
          rbcPadLeft( rbcFormatMetric( maxCorrection ), 13 ) );
