@@ -9,19 +9,19 @@
       </p>
    </description>
    <platform os="all" arch="noarch" version="1.9.3:1.9.9999">
-      <package fileName="packages/RowBandingCompensation-1.1.tar.gz"
-               sha1="00f755d7fceecaee53aeedf4b53da62af60bb26f"
+      <package fileName="packages/RowBandingCompensation-1.3.tar.gz"
+               sha1="78ea3bbb3558d4bc9ac435e5a5ad8cd7e42a5b41"
                type="script"
-               releaseDate="20260411103548">
+               releaseDate="20260502160850">
          <title>
-            RowBandingCompensation 1.1
+            RowBandingCompensation 1.3
          </title>
          <remove>
             src/scripts/RowBandingCompensation
          </remove>
          <description>
             <p>
-               Installs RowBandingCompensation 1.1, a PixInsight JavaScript Runtime script for conservative horizontal row-banding compensation.
+               Installs RowBandingCompensation 1.3, a PixInsight JavaScript Runtime script for conservative horizontal row-banding compensation.
             </p>
             <p>
                The package deploys the script source files under src/scripts/RowBandingCompensation. It is intended for monochrome linear frames whose residual banding remains visually horizontal.
